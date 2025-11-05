@@ -1,6 +1,7 @@
 import torch 
 import numpy as np
 import chess
+from torch.distributions import Categorical
 
 def tensor_from_position(board):
     '''
@@ -11,18 +12,16 @@ def tensor_from_position(board):
 
     Returns: 
     - position encoding: torch tensor of shape (8, 8, 12) = rank, file, piece
+        all values are flipped when it's black to play
     '''
     tensor = np.zeros((8, 8, 12), dtype=np.float32)
 
     for square, piece in board.piece_map().items():
         row = 7 - (square // 8)
         col = square % 8
-        #TODO: flip when black to play
-        idx = (piece.piece_type - 1) + (6 if piece.color == chess.BLACK else 0)
+        idx = (piece.piece_type - 1) + (6 if piece.color == board.turn else 0)
         tensor[row, col, idx] = 1
 
-
-    #TODO: flip board when black to play
     return torch.from_numpy(tensor)
 
 
@@ -71,10 +70,27 @@ def move_distribution(board, pred):
 
 
 
+def mask_logits(board, pred): 
+    '''
+    get the masked move logits
+
+    Parameters: 
+    - board: chessboard with current position
+    - pred: torch tensor with NN output
+
+    Return: 
+    - pred logits of legal moves: shape (64*64*5)
+
+    '''
+    mask    = move_mask(board).flatten()
+    masked  = pred.masked_fill(~mask, float('-inf'))
+    return masked
+
+
+
 def sample_move(board, pred):
     '''
     sample a move from legal move distribution
-
 
     Parameters: 
     - board: chessboard with current position
@@ -82,11 +98,12 @@ def sample_move(board, pred):
 
     Return: 
     - move in UCI notation (from square to square)
+    - Categorial log distribution: 
     '''
 
-
-    dist = move_distribution(board, pred)
-    idx = torch.multinomial(dist, 1)
-    move = torch.unravel_index(idx, (64,64,5))
-    return chess.Move(*move)
+    logits = mask_logits(board, pred)
+    m      = Categorical(logits=logits)
+    idx    = m.sample()
+    move   = torch.unravel_index(idx, (64,64,5))
+    return chess.Move(*move), m.log_prob(idx)
     
