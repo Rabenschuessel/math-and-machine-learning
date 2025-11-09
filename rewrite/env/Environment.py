@@ -2,7 +2,7 @@ from chess import Board, Move
 
 
 class Environment: 
-    def __init__(self, rewards=set()):
+    def __init__(self, rewards=[]):
         '''
         Parameters: 
             rewards: set of activated reward functions
@@ -32,5 +32,5 @@ class Environment:
 
 
     def evaluate_rewards(self) -> float: 
-        raise NotImplementedError
+        return sum([reward(self.board) for reward in self.rewards])
     

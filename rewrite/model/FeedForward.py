@@ -1,5 +1,5 @@
 from torch import nn
-from rewrite.model.ChessNN import ChessNN
+from .ChessNN import ChessNN
 
 
 class ChessFeedForward(ChessNN): 
