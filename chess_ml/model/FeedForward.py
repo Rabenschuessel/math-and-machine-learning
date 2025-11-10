@@ -10,7 +10,7 @@ class ChessFeedForward(ChessNN):
 
         layers = [nn.Linear(*l) for l in zip(input + hidden, hidden + output)]
 
-        self.flatten = nn.Flatten(start_dim=0)
+        self.flatten = nn.Flatten()
         self.stack = nn.Sequential(
             *[v 
                 for layer in layers[:-1] 

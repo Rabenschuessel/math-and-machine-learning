@@ -1,7 +1,7 @@
 import chess
-from Environment import Environment
-from model.FeedForward import ChessFeedForward
-from Rewards import attack_center
+from chess_ml.env.Environment import Environment
+from chess_ml.env.Rewards import attack_center
+from chess_ml.model.FeedForward import ChessFeedForward
 
 
 model = ChessFeedForward()
@@ -14,5 +14,8 @@ print(move)
 
 board, reward = env.step(move)
 print(reward)
+
+
+
 
 

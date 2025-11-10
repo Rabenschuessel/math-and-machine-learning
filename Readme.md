@@ -16,5 +16,5 @@
 
 # TODO
 
-[ ] RL loop 
-[ ] Immitation training
+- [ ] RL loop 
+- [ ] Immitation training

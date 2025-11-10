@@ -2,6 +2,7 @@ import torch
 from torch import nn, Tensor
 from torch.distributions import Categorical
 from chess import WHITE, Board, Move
+from collections.abc import Iterable
 import math
 
 class ChessNN(nn.Module): 
@@ -32,11 +33,10 @@ class ChessNN(nn.Module):
         if board.turn is not WHITE: 
             raise ValueError("Invalid Parameter: expects white to play")
 
-        input  = self.board_to_tensor(board)
+        input  = self.board_to_tensor(board).unsqueeze(0)
         output = self(input)
         distr  = self.tensor_to_move_distribution(output, board)
         action = distr.sample()
-
 
         move_idx = torch.unravel_index(action, ChessNN.output_shape)
         move     = Move(*move_idx)
@@ -110,3 +110,32 @@ class ChessNN(nn.Module):
         return mask 
 
 
+
+
+    @staticmethod
+    def fen_to_tensor(fen): 
+        '''
+        transforms fen or fen iterable into batch 
+        '''
+        if isinstance(fen, str) or not isinstance(fen, Iterable):
+            fen = [fen] 
+
+        tensors = [ChessNN.board_to_tensor(Board(f)) for f in fen]
+        return torch.stack(tensors, dim=0)
+
+
+
+
+    @staticmethod
+    def move_to_tensor(moves): 
+        '''
+        generate labels from move (uci) iterable
+        '''
+        moves = [Move.from_uci(m) for m in moves]
+        moves = [(i, m.from_square,m.to_square) for i, m in enumerate(moves)]
+        idx   = tuple(zip(*moves))
+
+        labels      = torch.zeros((len(moves), *ChessNN.output_shape))
+        labels[idx] = 1
+        labels      = labels.flatten(start_dim=1)
+        return labels

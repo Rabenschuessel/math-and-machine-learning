@@ -1,15 +1,18 @@
 from torch.utils.data import Dataset
+import pandas as pd
 
 
-class Puzzles(Dataset): 
+class PuzzleDataset(Dataset): 
 
-    def __init__(self):
-        pass
-
+    def __init__(self, path="./data/lichess_puzzle_labeled.csv"):
+        self.data = pd.read_csv(path)
+        
 
     def __len__(self): 
-        pass
+        return len(self.data)
 
-
-    def __getitem__(self, index): 
-        pass
+    def __getitem__(self, idx): 
+        row = self.data.iloc[idx]
+        features = row["FEN"]
+        label    = row["Moves"]
+        return features, label
