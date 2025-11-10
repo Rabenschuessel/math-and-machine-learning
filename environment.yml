@@ -1,0 +1,4 @@
+name: base
+channels:
+  - https://conda.anaconda.org/conda-forge
+prefix: /usr
