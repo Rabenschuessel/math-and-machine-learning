@@ -1,3 +1,11 @@
+# Get Started
+
+1. download [dataset](https://www.kaggle.com/datasets/tianmin/lichess-chess-puzzle-dataset) to ./data/ 
+2. unzip dataset to filename `./data/lichess-chess-puzzle-transformed.csv`
+3. transform dataset with `python data/transform_data.py` (takes about ~20min)
+4. train/test/save a model with `python -m chess_ml.train.Immitation` (takes more than ~20min)
+
+
 # Filestructure
 
 - chess_ml
