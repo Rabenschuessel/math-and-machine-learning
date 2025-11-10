@@ -21,9 +21,8 @@ def get_dataloader():
 
 
 ################################################################################
-#### Model
+#### Train
 ################################################################################
-
 def train(dataloader, model, loss_fn, optimizer, device="cpu"):
     size = len(dataloader.dataset)
     model.train()
@@ -47,6 +46,9 @@ def train(dataloader, model, loss_fn, optimizer, device="cpu"):
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}:{(current/size)*100:.2f}%]")
 
 
+################################################################################
+#### Test
+################################################################################
 def test(dataloader, model, loss_fn, device="cpu"):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
@@ -65,16 +67,18 @@ def test(dataloader, model, loss_fn, device="cpu"):
     print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
+################################################################################
+#### Main
+################################################################################
 def main():
-    device = "cpu"
     train_dl, test_dl = get_dataloader()
-
     model             = ChessFeedForward([512, 512, 512])
     optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn           = torch.nn.CrossEntropyLoss()
     train(train_dl, model, loss_fn, optimizer)
 
     test(test_dl, model, loss_fn)
+    torch.save(model, "model.pth")
 
 if __name__ == "__main__":
     main()  
