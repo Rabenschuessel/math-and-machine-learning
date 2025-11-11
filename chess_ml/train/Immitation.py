@@ -1,5 +1,7 @@
+from re import split
 import torch
 from torch.utils.data import random_split, DataLoader
+from tqdm import tqdm 
 
 from chess_ml.data.Puzzles import PuzzleDataset
 from chess_ml.model.ChessNN import ChessNN
@@ -8,15 +10,19 @@ from chess_ml.model.FeedForward import ChessFeedForward
 ################################################################################
 #### Dataset
 ################################################################################
-def get_dataloader(): 
-    dataset = PuzzleDataset()
-    train_size = int(0.8 * len(dataset))
-    test_size = len(dataset) - train_size
-    train_dataset, test_dataset = random_split(dataset, [train_size, test_size])
+def get_dataloader(validation=0.0): 
+    dataset         = PuzzleDataset()
+    size            = int(len(dataset) * (1 - validation))
+    train_size      = int(0.8 * size)
+    test_size       = size - train_size
+    validation_size = len(dataset) - train_size - test_size
+    splits          = [train_size, test_size, validation_size]
+    train_dataset, test_dataset, val_dataset = random_split(dataset, splits)
 
     train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    test_loader = DataLoader(test_dataset, batch_size=32)
-    return train_loader, test_loader
+    test_loader  = DataLoader(test_dataset, batch_size=32)
+    val_loader   = DataLoader(val_dataset, batch_size=32)
+    return train_loader, test_loader, val_loader
 
 
 
@@ -24,9 +30,11 @@ def get_dataloader():
 #### Train
 ################################################################################
 def train(dataloader, model, loss_fn, optimizer, device="cpu"):
-    size = len(dataloader.dataset)
     model.train()
-    for batch, (x, y) in enumerate(dataloader):
+    for batch, (x, y) in tqdm(enumerate(dataloader),
+                              total=len(dataloader),
+                              desc ="Training Routine",
+                              unit ="Batch"):
         x = ChessNN.fen_to_tensor(x)
         y = ChessNN.move_to_tensor(y)
         x, y = x.to(device), y.to(device)
@@ -42,44 +50,60 @@ def train(dataloader, model, loss_fn, optimizer, device="cpu"):
         optimizer.step()
 
         if batch % 100 == 0:
-            loss, current = loss.item(), (batch + 1) * len(x)
-            print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}:{(current/size)*100:.2f}%]")
+            loss = loss.item()
+            tqdm.write(f"batch: {batch} loss: {loss:>7f}")
 
 
 ################################################################################
 #### Test
 ################################################################################
 def test(dataloader, model, loss_fn, device="cpu"):
-    size = len(dataloader.dataset)
+    size        = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
     test_loss, correct = 0, 0
     with torch.no_grad():
-        for x, y in dataloader:
+        for x, y in tqdm(dataloader,
+                                   total=len(dataloader),
+                                   desc ="Testing Model",
+                                   unit ="Batch"):
             x = ChessNN.fen_to_tensor(x)
             y = ChessNN.move_to_tensor(y)
             x, y = x.to(device), y.to(device)
             pred = model(x)
+
             test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+            correct   += (pred.argmax(1) == y.argmax(1)).type(torch.float).sum().item()
     test_loss /= num_batches
-    correct /= size
-    print(f"Test Error: \n Accuracy: {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    correct   /= size
+    print(f"Test Error: \n Accuracy {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
 
 
 ################################################################################
 #### Main
 ################################################################################
 def main():
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    train_dl, test_dl = get_dataloader()
+    val_holdout = 0.0
+    device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    print("Load Dataset")
+    train_dl, test_dl, val_dl = get_dataloader(val_holdout)
+
+    print("Load Model")
     model             = ChessFeedForward([512, 512, 512])
     optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn           = torch.nn.CrossEntropyLoss()
+
+    print("Train Model")
     train(train_dl, model, loss_fn, optimizer, device)
 
+    print("Test Model")
     test(test_dl, model, loss_fn, device)
-    torch.save(model, "model.pth")
+
+    print("Save Model")
+    torch.save(model.state_dict(), f"trained-{val_holdout}-model.pth")
+
+
 
 if __name__ == "__main__":
     main()  
