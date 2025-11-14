@@ -18,8 +18,6 @@ class ChessFeedForward(ChessNN):
             ],
             layers[-1]
         )
-            
-            
 
 
 

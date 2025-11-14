@@ -30,7 +30,61 @@
     └── transform_data.py: transforms kaggle dataset to labeled dataset
 ```
 
+
+# Study
+
+Immitation, Immitation + RL, RL 
+RL: 3-4 reward function sets? 
+
+Training: 
+
+- Immitation
+- Immitation reward1
+- Immitation reward2
+- Immitation reward3
+- Immitation reward4
+- Reward1
+- Reward2
+- Reward3
+- Reward4
+
+
+Testing: 
+
+1000 games against models and stockfish
+
+
+
+
 # TODO
 
-- [ ] RL loop 
-- [ ] Immitation training
+
+
+1.  
+    - [ ] Model Architecture 
+        - [ ] Network Structure (CNN,...)
+        - [ ] Hyperparameter Tuning (hidden layer # and size)
+2. 
+    - [ ] Overlay
+    - [ ] Controller for parameters
+    - [ ] Arena against stockfish
+
+
+Patric: 
+
+- [ ] Saving statistics in training and playing
+    - [ ] Training 
+    - [ ] Playing 
+    - [ ] Environment
+
+Jannis: 
+
+- [ ] Related Works (existing architectures,...) -> in directory on git
+    - [ ] Hyperparameter tuning
+    - [ ] Existing models 
+
+Jakob: 
+
+- [ ] RL 
+    - [ ] Selfplay script
+    - [ ] Reward Functions
