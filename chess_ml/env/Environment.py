@@ -14,10 +14,14 @@ class Environment:
         '''
         self.board   = Board()
         self.rewards = rewards
+        self.reward_log = {r.__name__: [] for r in self.rewards}
+        self.reward_log["sum"] = []
 
 
 
     def reset(self) -> Board: 
+        self.reward_log = {r.__name__: [] for r in self.rewards}
+        self.reward_log["sum"] = []
         self.board.reset()
         return self.board
 
@@ -56,6 +60,9 @@ class Environment:
                         for reward_f, reward in zip(self.rewards, rewards)}
         logging.info("  Move: {}\n    Acc Rewards: {} \n    Rewards: {}"
                      .format(move, acc_rewards, reward_dict))
+        for k, v in reward_dict.items(): 
+            self.reward_log[k].append(v)
+        self.reward_log["sum"].append(acc_rewards)
 
         return acc_rewards
     

@@ -2,6 +2,7 @@ import logging
 import chess
 import chess.pgn
 import torch 
+import pandas as pd
 from torch import optim
 from tqdm import tqdm 
 from pathlib import Path
@@ -93,6 +94,8 @@ def train(model : ChessNN,
         path.mkdir(parents=True, exist_ok=True)
         with open(path / "game-{:06d}.pgn".format(game_number), "w") as f:
             print(game, file=f)
+        (pd.DataFrame(env.reward_log)
+            .to_csv(path / "game-{:06d}.rewards".format(game_number)))
 
 
         # apply rewards
