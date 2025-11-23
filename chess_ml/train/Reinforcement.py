@@ -106,9 +106,9 @@ def train(model : ChessNN,
 
 
 
-def main(): 
-    experiment = 1
-    log_dir    = Path("logs/experiment-{}".format(experiment))
+def main(experiment=1,
+         number_of_games=100): 
+    log_dir    = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         filename=log_dir / 'log.log',

@@ -1,7 +1,11 @@
-from re import split
+
 import torch
+import logging
+from pathlib import Path
 from torch.utils.data import random_split, DataLoader
+from torch import device
 from tqdm import tqdm 
+from typing import Union
 
 from chess_ml.data.Puzzles import PuzzleDataset
 from chess_ml.model.ChessNN import ChessNN
@@ -13,7 +17,7 @@ from chess_ml.model.FeedForward import ChessFeedForward
 def get_dataloader(validation=0.0): 
     dataset         = PuzzleDataset()
     size            = int(len(dataset) * (1 - validation))
-    train_size      = int(0.8 * size)
+    train_size      = int(0.9 * size)
     test_size       = size - train_size
     validation_size = len(dataset) - train_size - test_size
     splits          = [train_size, test_size, validation_size]
@@ -29,7 +33,8 @@ def get_dataloader(validation=0.0):
 ################################################################################
 #### Train
 ################################################################################
-def train(dataloader, model, loss_fn, optimizer, device="cpu"):
+def train(dataloader, model, loss_fn, optimizer, device:Union[str,device]="cpu"):
+
     model.train()
     for batch, (x, y) in tqdm(enumerate(dataloader),
                               total=len(dataloader),
@@ -57,7 +62,7 @@ def train(dataloader, model, loss_fn, optimizer, device="cpu"):
 ################################################################################
 #### Test
 ################################################################################
-def test(dataloader, model, loss_fn, device="cpu"):
+def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
     size        = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
@@ -82,7 +87,16 @@ def test(dataloader, model, loss_fn, device="cpu"):
 ################################################################################
 #### Main
 ################################################################################
-def main():
+def main(experiment=1, 
+         epochs=10):
+    log_dir    = Path("logs/im/experiment-{}".format(experiment))
+    log_dir.mkdir(parents=True, exist_ok=True)
+    logging.basicConfig(
+        filename=log_dir / 'log.log',
+        level=logging.INFO,      
+        format='%(message)s'  
+    )
+
     val_holdout = 0.0
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -94,14 +108,19 @@ def main():
     optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn           = torch.nn.CrossEntropyLoss()
 
-    print("Train Model")
-    train(train_dl, model, loss_fn, optimizer, device)
+    for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):
+        tqdm.write("Train Model")
+        train(train_dl, model, loss_fn, optimizer, device)
 
-    print("Test Model")
-    test(test_dl, model, loss_fn, device)
+        tqdm.write("Train Model")
+        test(test_dl, model, loss_fn, device)
+
+        if epoch % 5 == 0: 
+            tqdm.write("Save Checkpoint")
+            torch.save(model.state_dict(), log_dir / f"checkpoint-{epoch}-{val_holdout}-model.pth")
 
     print("Save Model")
-    torch.save(model.state_dict(), f"trained-{val_holdout}-model.pth")
+    torch.save(model.state_dict(), log_dir / f"trained-{val_holdout}-final-model.pth")
 
 
 
