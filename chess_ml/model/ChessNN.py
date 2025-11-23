@@ -13,8 +13,15 @@ class ChessNN(nn.Module):
     output_size = math.prod(output_shape)
 
     def __init__(self):
-        super().__init__()
+        '''
+        Base class for chess neural network. 
 
+        Handles transformation from board to input tensor `board_to_tensor()` 
+        and from output tensor to legal move `tensor_to_move_distribution()`. 
+
+        The `predict()` function takes a `Board` and returns a sampled legal `Move`. 
+        '''
+        super().__init__()
 
 
     def predict(self, board: Board): 
@@ -30,6 +37,7 @@ class ChessNN(nn.Module):
             samples move (chess.Move): 
             prob_dist (torch.tensor): log probabilies
         '''
+
         if board.turn is not WHITE: 
             raise ValueError("Invalid Parameter: expects white to play")
 
@@ -42,7 +50,6 @@ class ChessNN(nn.Module):
         move     = Move(*move_idx)
         log_prob = distr.log_prob(action)
         return move, log_prob
-
 
 
     @staticmethod
@@ -68,8 +75,6 @@ class ChessNN(nn.Module):
         return t
 
 
-
-
     @staticmethod
     def tensor_to_move_distribution(tensor: Tensor, board: Board): 
         ''' 
@@ -87,7 +92,6 @@ class ChessNN(nn.Module):
         distr  = Categorical(logits=logits)
 
         return distr
-
 
 
     @staticmethod
@@ -110,8 +114,6 @@ class ChessNN(nn.Module):
         return mask 
 
 
-
-
     @staticmethod
     def fen_to_tensor(fen): 
         '''
@@ -122,8 +124,6 @@ class ChessNN(nn.Module):
 
         tensors = [ChessNN.board_to_tensor(Board(f)) for f in fen]
         return torch.stack(tensors, dim=0)
-
-
 
 
     @staticmethod

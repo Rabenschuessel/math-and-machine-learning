@@ -5,6 +5,7 @@ import cairosvg
 from tqdm import tqdm
 from chess_ml.env.Environment import Environment
 from chess_ml.env.Rewards import attack_center
+from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
 
 
@@ -74,3 +75,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+ChessNN()
