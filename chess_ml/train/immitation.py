@@ -104,8 +104,9 @@ def main(experiment=1,
         format='%(message)s'  
     )
 
-    val_holdout = 0.0
+    val_holdout = 0.1
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("training on {}".format(device))
 
     print("Load Dataset")
     train_dl, test_dl, val_dl = get_dataloader(val_holdout)
@@ -123,7 +124,7 @@ def main(experiment=1,
         tqdm.write("Train Model")
         test(test_dl, model, loss_fn, device)
 
-        if epoch % 5 == 0: 
+        if epoch % 2 == 0: 
             tqdm.write("Save Checkpoint")
             torch.save(model.state_dict(), log_dir / f"checkpoint-{epoch}-{val_holdout}-model.pth")
 
