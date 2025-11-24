@@ -123,7 +123,8 @@ def train(model : ChessNN,
 #### Main
 ################################################################################
 def main(experiment=1,
-         number_of_games=100): 
+         number_of_games=100, 
+         model_path=None): 
     log_dir    = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -136,6 +137,8 @@ def main(experiment=1,
     device    = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     env       = Environment(rewards=Rewards.all_rewards)
     model     = ChessFeedForward([512, 512, 512])
+    if model_path is not None: 
+        model.load_state_dict(torch.load(model_path))
     model     = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-2)
 
@@ -149,6 +152,7 @@ if __name__ == "__main__":
         description="transform chess puzzle dataset")
     parser.add_argument('-g', '--games' , default=1000, type=int)
     parser.add_argument('-e', '--experiment', default=1, type=int)
+    parser.add_argument('-m', '--model', default=None)
     args = parser.parse_args()
 
-    main(experiment=args.experiment, number_of_games=args.games)
+    main(experiment=args.experiment, number_of_games=args.games, model_path=args.model)
