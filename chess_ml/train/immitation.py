@@ -140,8 +140,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="immitation learning", 
         description="transform chess puzzle dataset")
-    parser.add_argument('-n', '--epochs' , default=10)
-    parser.add_argument('-e', '--experiment', default=1)
+    parser.add_argument('-n', '--epochs' , default=10, type=int)
+    parser.add_argument('-e', '--experiment', default=1, type=int)
     args = parser.parse_args()
 
     main(experiment=args.experiment, epochs=args.epochs)
