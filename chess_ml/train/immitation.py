@@ -15,7 +15,7 @@ from tqdm import tqdm
 from typing import Union
 
 from chess_ml.data import PuzzleDataset
-from chess_ml.model.ChessNN import ChessNN
+from chess_ml.model import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
 
 ################################################################################
