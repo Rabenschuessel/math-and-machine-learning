@@ -48,12 +48,11 @@ class ChessNN(nn.Module):
             prob_dist: log probabilies of model output masked by move legality
         '''
 
-        flipped = False
         if board.turn is not WHITE: 
-            board = board.mirror()
             raise ValueError("Invalid Parameter: expects white to play")
 
-        input  = self.board_to_tensor(board).unsqueeze(0)
+        device = next(self.parameters()).device
+        input  = self.board_to_tensor(board).unsqueeze(0).to(device)
         output = self(input)
         distr  = self.tensor_to_move_distribution(output, board)
         action = distr.sample()

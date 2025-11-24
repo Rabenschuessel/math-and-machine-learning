@@ -112,6 +112,7 @@ def main(experiment=1,
 
     print("Load Model")
     model             = ChessFeedForward([512, 512, 512])
+    model             = model.to(device)
     optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn           = torch.nn.CrossEntropyLoss()
 

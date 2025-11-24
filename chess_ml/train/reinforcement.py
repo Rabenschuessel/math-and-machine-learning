@@ -12,8 +12,10 @@ import chess.pgn
 import torch 
 import pandas as pd
 from torch import optim
+from torch import device
 from tqdm import tqdm 
 from pathlib import Path
+from typing import Union
 
 from chess_ml.env import Rewards
 from chess_ml.env.Environment import Environment
@@ -36,11 +38,16 @@ def compute_discounted_rewards(rewards, gamma=0.99):
     return discounted_rewards
 
 
+################################################################################
+#### Train
+################################################################################
 def train(model : ChessNN,
           env   : Environment,
           optimizer, 
           number_of_games=10, 
-          log_dir="log/rl/"):
+          log_dir="log/rl/",
+          device:Union[str,device]="cpu"
+          ):
     '''
     selfplay a number of games and 
     '''
@@ -112,7 +119,9 @@ def train(model : ChessNN,
         optimizer.step()
 
 
-
+################################################################################
+#### Main
+################################################################################
 def main(experiment=1,
          number_of_games=100): 
     log_dir    = Path("logs/rl/experiment-{}".format(experiment))
@@ -124,8 +133,10 @@ def main(experiment=1,
     )
 
 
+    device    = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     env       = Environment(rewards=Rewards.all_rewards)
     model     = ChessFeedForward([512, 512, 512])
+    model     = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-2)
 
     train(model, env, optimizer, number_of_games=number_of_games, log_dir=log_dir)
