@@ -1,9 +1,10 @@
 from torch import nn
 from .ChessNN import ChessNN
+from typing import List
 
 
 class ChessFeedForward(ChessNN): 
-    def __init__(self, hidden:list[int]=[600]):
+    def __init__(self, hidden:List[int]=[600]):
         '''Feed forward implementation of ChessNN.
 
         Parameters: 

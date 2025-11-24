@@ -3,7 +3,6 @@ channels:
   - conda-forge
   - https://conda.anaconda.org/conda-forge
 dependencies:
-  - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=5_kmp_llvm
   - bzip2=1.0.8=hda65f42_8
   - ca-certificates=2025.10.5=hbd8a1cb_0

@@ -2,6 +2,7 @@ import logging
 import chess
 import chess.pgn
 from chess import Board, Move 
+from typing import Tuple
 
 
 class Environment: 
@@ -33,7 +34,7 @@ class Environment:
 
 
 
-    def step(self, move: Move) -> tuple[Board, float, bool]: 
+    def step(self, move: Move) -> Tuple[Board, float, bool]: 
         '''
         Perform move and evaluate rewards. 
         Mirrors board afterwards so white is always playing
