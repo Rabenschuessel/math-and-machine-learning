@@ -1,6 +1,7 @@
 import logging
 import chess
-from chess import Board, Move
+import chess.pgn
+from chess import Board, Move 
 
 
 class Environment: 
@@ -24,6 +25,11 @@ class Environment:
         self.reward_log["sum"] = []
         self._board.reset()
         return self._board
+
+
+    def get_game(self) -> chess.pgn.Game: 
+        '''Returns the game so that it can be saved as pgn'''
+        return chess.pgn.Game.from_board(self._board)
 
 
 

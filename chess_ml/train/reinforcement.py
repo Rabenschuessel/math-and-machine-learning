@@ -92,7 +92,7 @@ def train(model : ChessNN,
               .format(sum(rewards_white), sum(rewards_black)))
 
         # save pgn to logs
-        game = chess.pgn.Game.from_board(board)
+        game = env.get_game()
         game.headers["Round"] = str(game_number)
         game.headers["Accumulated-Rewards-White"] = str(sum(rewards_white))
         game.headers["Accumulated-Rewards-Black"] = str(sum(rewards_black))

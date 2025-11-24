@@ -125,6 +125,10 @@ def main(experiment=1,
             tqdm.write("Save Checkpoint")
             torch.save(model.state_dict(), log_dir / f"checkpoint-{epoch}-{val_holdout}-model.pth")
 
+
+    tqdm.write("Validation")
+    test(val_dl, model, loss_fn, device)
+
     print("Save Model")
     torch.save(model.state_dict(), log_dir / f"trained-{val_holdout}-final-model.pth")
 
