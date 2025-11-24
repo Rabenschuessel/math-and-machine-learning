@@ -105,7 +105,7 @@ def main(experiment=1,
     )
 
     val_holdout = 0.1
-    device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device      = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     print("training on {}".format(device))
 
     print("Load Dataset")

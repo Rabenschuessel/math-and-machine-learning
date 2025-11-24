@@ -133,7 +133,7 @@ def main(experiment=1,
     )
 
 
-    device    = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device    = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
     env       = Environment(rewards=Rewards.all_rewards)
     model     = ChessFeedForward([512, 512, 512])
     model     = model.to(device)
