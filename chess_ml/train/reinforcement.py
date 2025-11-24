@@ -5,6 +5,7 @@ This module provides a training procedure for reinforcement learning
 '''
 
 
+import argparse
 import logging
 import chess
 import chess.pgn
@@ -127,9 +128,16 @@ def main(experiment=1,
     model     = ChessFeedForward([512, 512, 512])
     optimizer = optim.Adam(model.parameters(), lr=1e-2)
 
-    train(model, env, optimizer, number_of_games=100, log_dir=log_dir)
+    train(model, env, optimizer, number_of_games=number_of_games, log_dir=log_dir)
 
 
 
 if __name__ == "__main__": 
-    main()
+    parser = argparse.ArgumentParser(
+        prog="immitation learning", 
+        description="transform chess puzzle dataset")
+    parser.add_argument('-g', '--games' , default=1000)
+    parser.add_argument('-e', '--experiment', default=1)
+    args = parser.parse_args()
+
+    main(experiment=args.experiment, number_of_games=args.games)

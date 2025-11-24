@@ -5,6 +5,7 @@ This module provides a training procedure for immitation learning
 '''
 
 
+import argparse
 import torch
 import logging
 from pathlib import Path
@@ -135,5 +136,12 @@ def main(experiment=1,
 
 
 if __name__ == "__main__":
-    main()  
+    parser = argparse.ArgumentParser(
+        prog="immitation learning", 
+        description="transform chess puzzle dataset")
+    parser.add_argument('-n', '--epochs' , default=10)
+    parser.add_argument('-e', '--experiment', default=1)
+    args = parser.parse_args()
+
+    main(experiment=args.experiment, epochs=args.epochs)
 
