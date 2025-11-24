@@ -1,4 +1,5 @@
 import torch 
+from typing import Tuple
 from torch import nn, Tensor
 from torch.distributions import Categorical
 from chess import WHITE, Board, Move
@@ -31,7 +32,7 @@ class ChessNN(nn.Module):
         super().__init__()
 
 
-    def predict(self, board: Board) -> tuple[Move, Tensor]: 
+    def predict(self, board: Board) -> Tuple[Move, Tensor]: 
         '''Wrapper for forward which parses Board position and 
         returns legal move distribution and sampled move. 
 
