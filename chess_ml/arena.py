@@ -1,3 +1,4 @@
+import argparse
 import torch
 import chess
 import chess.svg
@@ -9,12 +10,8 @@ from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
 
 
-
-
-
-
-
 def pit(model1, model2, plot=False, game=0): 
+    '''Pit two models against each other for a certain number of games'''
     env   = Environment([attack_center])
     board = env.reset()
 
@@ -48,13 +45,15 @@ def pit(model1, model2, plot=False, game=0):
 
 
 
-def main():
+def main(path1=None, path2=None):
     games = 1000
     m1 = ChessFeedForward([512, 512, 512])
+    if path1 is not None: 
+        m1.load_state_dict(torch.load(path1))
 
     m2 = ChessFeedForward([512, 512, 512])
-    m2.load_state_dict(torch.load("models/trained-0.0-model.pth"))
-
+    if path2 is not None: 
+        m2.load_state_dict(torch.load(path2))
 
     results = {"win": 0, "draw": 0, "loss": 0}
     for i in tqdm(range(games)): 
@@ -74,6 +73,12 @@ def main():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        prog="immitation learning", 
+        description="transform chess puzzle dataset")
+    parser.add_argument('-1', '--model1', default=None)
+    parser.add_argument('-2', '--model2', default=None)
+    args = parser.parse_args()
     main()
 
 
