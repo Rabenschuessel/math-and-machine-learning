@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import chess
 import tqdm
@@ -44,12 +45,21 @@ def transform_position(row: pd.Series):
 
 
 def main():  
+    input  = "./data/lichess_puzzle_transformed.csv"
+    output = "./data/lichess_transformed.csv"
+    parser = argparse.ArgumentParser(
+        prog="puzzle-transform", 
+        description="transform chess puzzle dataset")
+    parser.add_argument('-i', '--input' , default=input )
+    parser.add_argument('-o', '--output', default=output)
+    args = parser.parse_args()
+
     tqdm.tqdm.pandas()
-    df1 = pd.read_csv("./data/lichess_puzzle_transformed.csv")
+    df1 = pd.read_csv(args.input)
     df2 = df1.head(5)
     df3 = df2.progress_apply(transform_position, axis=1)
     df4 = df3.explode(["FEN", "Moves"])
-    df4.to_csv("./data/lichess_transformed.csv")
+    df4.to_csv(args.output)
 
 
 if __name__ == "__main__":

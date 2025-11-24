@@ -1,3 +1,10 @@
+'''
+This module provides a training procedure for reinforcement learning
+
+    python -m chess_ml.train.reinforcement
+'''
+
+
 import logging
 import chess
 import chess.pgn
@@ -6,7 +13,6 @@ import pandas as pd
 from torch import optim
 from tqdm import tqdm 
 from pathlib import Path
-
 
 from chess_ml.env import Rewards
 from chess_ml.env.Environment import Environment

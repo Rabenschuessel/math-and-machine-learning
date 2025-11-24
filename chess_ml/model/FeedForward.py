@@ -3,7 +3,12 @@ from .ChessNN import ChessNN
 
 
 class ChessFeedForward(ChessNN): 
-    def __init__(self, hidden=[600]):
+    def __init__(self, hidden:list[int]=[600]):
+        '''Feed forward implementation of ChessNN.
+
+        Parameters: 
+            hidden: size of hidden layers
+        '''
         super().__init__()
         input  = [ChessNN.input_size]
         output = [ChessNN.output_size]

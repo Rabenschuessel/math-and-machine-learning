@@ -13,29 +13,39 @@ class ChessNN(nn.Module):
     output_size = math.prod(output_shape)
 
     def __init__(self):
-        '''
-        Base class for chess neural network. 
+        '''Abstract base class for chess neural network. 
 
         Handles transformation from board to input tensor `board_to_tensor()` 
         and from output tensor to legal move `tensor_to_move_distribution()`. 
-
         The `predict()` function takes a `Board` and returns a sampled legal `Move`. 
+
+            import chess 
+            from chess_ml.model import ChessFeedForward
+
+            board     = chess.Board()
+            model     = ChessFeedForward()
+            move, log = model.predict(board)
+            board.push(move)
+
         '''
         super().__init__()
 
 
-    def predict(self, board: Board): 
-        ''' 
-        Wrapper around forward.
-        Transforms board into input tensor, 
-        and output tensor into move distribution (masked by legal moves). 
+    def predict(self, board: Board) -> tuple[Move, Tensor]: 
+        '''Wrapper for forward which parses Board position and 
+        returns legal move distribution and sampled move. 
+
+        Handles parsing the position into a tensor that the model can work with. 
+        Then forward is applied to predict a move. 
+        A move distribution is generated from the model output and the legal moves in the position. 
+        A move is sampled from this distribution and `predict` returns 
+        a legal move and the distribution it was sampled from. 
 
         Parameters: 
-            board (chess.Board): 
-
+            board: current position. Expects white to play 
         Returns: 
-            samples move (chess.Move): 
-            prob_dist (torch.tensor): log probabilies
+            samples move: move sampled from output distribution. The move is guaranteed to be legal
+            prob_dist: log probabilies of model output masked by move legality
         '''
 
         if board.turn is not WHITE: 
@@ -54,12 +64,10 @@ class ChessNN(nn.Module):
 
     @staticmethod
     def board_to_tensor(board: Board): 
-        '''
-        Transforms board into input tensor.  
+        '''Transforms board into input tensor.  
 
         Parameters: 
             board (chess.Board): expects white to play
-
         Returns: 
             input tensor (torch.tensor): one hot encoding
         '''
@@ -76,16 +84,14 @@ class ChessNN(nn.Module):
 
 
     @staticmethod
-    def tensor_to_move_distribution(tensor: Tensor, board: Board): 
-        ''' 
-        Transforms model output tensor into move distribution. 
-        The move distribution is masked according to legal moves
+    def tensor_to_move_distribution(tensor: Tensor, board: Board) -> Categorical: 
+        '''Transforms model output to legal move distribution. 
 
         Parameters: 
-            board (chess.Board): 
-
+            tensor: model output tensor. 
+            board: current position. Used to mask out illegal moves
         Returns: 
-            move distribution (torch.distributions.Categorical)
+            move distribution: legal move distribution  
         '''
         mask   = ChessNN.move_mask(board)
         logits = tensor.masked_fill(~mask, float('-inf'))
@@ -95,15 +101,13 @@ class ChessNN(nn.Module):
 
 
     @staticmethod
-    def move_mask(board: Board):
-        ''' 
-        move mask for leagl moves 
+    def move_mask(board: Board) -> Tensor:
+        '''Returns move mask for legal moves.
 
         Parameters: 
-            board (chess.Board): 
-
+            board: current position
         Returns: 
-            move mask (torch.tensor)
+            move mask: mask with 1 for legal move and 0 for illegal move 
         '''
         moves = [(m.from_square,m.to_square) for m in board.legal_moves]
         idx   = tuple(zip(*moves))

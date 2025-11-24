@@ -1,3 +1,9 @@
+'''
+This module provides a training procedure for immitation learning
+
+    python -m chess_ml.train.immitation
+'''
+
 
 import torch
 import logging
@@ -7,7 +13,7 @@ from torch import device
 from tqdm import tqdm 
 from typing import Union
 
-from chess_ml.data.Puzzles import PuzzleDataset
+from chess_ml.data import PuzzleDataset
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
 

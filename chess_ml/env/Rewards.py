@@ -7,7 +7,6 @@ def attack_center(board: Board, move: Move) -> float:
     Parameters: 
         board: current position white to play
         metadata: turn number, etc. board is not guaranteed to be white to play
-
     Return: 
         evaluation for white in board
     '''

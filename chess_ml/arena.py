@@ -42,7 +42,7 @@ def pit(model1, model2, plot=False, game=0):
             cairosvg.svg2png(bytestring=svg.encode('utf-8'),
                              write_to="games/game-{:02d}-move-{:03d}.png".format(game, i))
 
-    return env.board.result()
+    return env._board.result()
 
 
 
