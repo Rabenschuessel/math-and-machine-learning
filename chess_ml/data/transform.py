@@ -56,10 +56,10 @@ def main():
 
     tqdm.tqdm.pandas()
     df1 = pd.read_csv(args.input)
-    df2 = df1.head(5)
-    df3 = df2.progress_apply(transform_position, axis=1)
-    df4 = df3.explode(["FEN", "Moves"])
-    df4.to_csv(args.output)
+    # df1 = df1.head(5)
+    df1 = df1.progress_apply(transform_position, axis=1)
+    df1 = df1.explode(["FEN", "Moves"])
+    df1.to_csv(args.output)
 
 
 if __name__ == "__main__":
