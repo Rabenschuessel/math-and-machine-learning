@@ -3,7 +3,8 @@ import pandas as pd
 
 class PuzzleDataset(Dataset): 
     def __init__(self, path="./data/lichess_puzzle_labeled.csv"):
-        '''PuzzleDataset implements a torch dataset for an underlying csv file with chess puzzles.
+        '''PuzzleDataset implements a torch dataset for 
+        an underlying csv file with chess puzzles.
 
         Parameters: 
             path: path to csv file containing puzzles

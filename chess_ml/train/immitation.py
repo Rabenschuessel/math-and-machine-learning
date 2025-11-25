@@ -8,6 +8,7 @@ This module provides a training procedure for immitation learning
 import argparse
 import torch
 import logging
+import numpy as np
 from pathlib import Path
 from torch.utils.data import random_split, DataLoader
 from torch import device
@@ -103,7 +104,11 @@ def main(experiment=1,
         level=logging.INFO,      
         format='%(message)s'  
     )
+    models_dir = Path(log_dir/"models")
+    models_dir.mkdir(parents=True, exist_ok=True)
 
+    torch.manual_seed(0)
+    np.random.seed(0)
     val_holdout = 0.1
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("training on {}".format(device))
@@ -126,14 +131,14 @@ def main(experiment=1,
 
         if epoch % 2 == 0: 
             tqdm.write("Save Checkpoint")
-            torch.save(model.state_dict(), log_dir / f"checkpoint-{epoch}-{val_holdout}-model.pth")
+            torch.save(model.state_dict(), models_dir / f"checkpoint-{epoch}-{val_holdout}-model.pth")
 
 
     tqdm.write("Validation")
     test(val_dl, model, loss_fn, device)
 
     print("Save Model")
-    torch.save(model.state_dict(), log_dir / f"trained-{val_holdout}-final-model.pth")
+    torch.save(model.state_dict(), models_dir / f"trained-{val_holdout}-final-model.pth")
 
 
 
