@@ -129,7 +129,7 @@ def main(experiment=1,
         tqdm.write("Train Model")
         train(train_dl, model, loss_fn, optimizer, device)
 
-        tqdm.write("Train Model")
+        tqdm.write("Test Model")
         test(test_dl, model, loss_fn, device)
 
         if epoch % 2 == 0: 

@@ -124,7 +124,8 @@ def train(model : ChessNN,
 ################################################################################
 def main(experiment=1,
          number_of_games=100, 
-         model_path=None): 
+         model_path=None, 
+         epochs=100): 
     log_dir    = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -132,6 +133,8 @@ def main(experiment=1,
         level=logging.INFO,      
         format='%(message)s'  
     )
+    models_dir = Path(log_dir/"models")
+    models_dir.mkdir(parents=True, exist_ok=True)
 
 
     device    = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -142,11 +145,15 @@ def main(experiment=1,
     model     = model.to(device)
     optimizer = optim.Adam(model.parameters(), lr=1e-2)
 
-    train(model, env, optimizer, number_of_games=number_of_games, log_dir=log_dir)
+    for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):
+        tqdm.write("Train Model")
+        train(model, env, optimizer, number_of_games=number_of_games, log_dir=log_dir)
+
+        if epoch % 2 == 0: 
+            tqdm.write("Save Checkpoint")
+            torch.save(model.state_dict(), models_dir / f"checkpoint-{epoch}.pth")
 
     print("Save Model")
-    models_dir = Path(log_dir/"models")
-    models_dir.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), models_dir / f"final-model.pth")
 
 
@@ -156,8 +163,12 @@ if __name__ == "__main__":
         prog="immitation learning", 
         description="transform chess puzzle dataset")
     parser.add_argument('-g', '--games' , default=1000, type=int)
-    parser.add_argument('-e', '--experiment', default=1, type=int)
+    parser.add_argument('-n', '--experiment-name', default=0, type=int)
+    parser.add_argument('-e', '--epochs', default=100, type=int)
     parser.add_argument('-m', '--model', default=None)
     args = parser.parse_args()
 
-    main(experiment=args.experiment, number_of_games=args.games, model_path=args.model)
+    main(experiment=args.experiment_name,
+         number_of_games=args.games,
+         model_path=args.model,
+         epochs=args.epochs)
