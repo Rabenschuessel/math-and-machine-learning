@@ -72,19 +72,32 @@ Testing:
 
 Patric: 
 
+- [ ] Slides 
 - [ ] Saving statistics in training and playing
     - [ ] Training 
     - [ ] Playing 
     - [ ] Environment
+- [ ] 2 paper RL und hyperparam
 
 Jannis: 
 
 - [ ] Related Works (existing architectures,...) -> in directory on git
-    - [ ] Hyperparameter tuning
+    - [ ] Hyperparameter tuning (general/chess specific)
+        - [ ] architecture (convolutional?)
+        - [ ] learning rate
+        - [ ] number / size of layers 
+    - [ ] Reinformcenet learning reward modelling 
+        - [ ] weighting of different reward functions 
+        - [ ] normalization of rewards,...
+        - [ ] discounted rewards gamma
     - [ ] Existing models 
 
 Jakob: 
 
+- [ ] auf cluster laufen lassen
+    - [ ] immitation learning 
+    - [ ] reinforcement learning 
+    - [ ] arena results
 - [x] RL 
     - [x] Selfplay script
     - [x] Reward Functions
