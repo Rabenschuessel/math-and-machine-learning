@@ -85,6 +85,6 @@ Jannis:
 
 Jakob: 
 
-- [ ] RL 
-    - [ ] Selfplay script
-    - [ ] Reward Functions
+- [x] RL 
+    - [x] Selfplay script
+    - [x] Reward Functions

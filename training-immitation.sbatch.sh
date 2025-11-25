@@ -16,6 +16,6 @@ conda activate chess_ml
 
 
 # start immitation 
-python -m chess_ml.train.immitation \
-	--experiment 0 \
+python -m chess_ml.train.immitation "$@" \
+	--experiment-name 0 \
 	--epochs 10

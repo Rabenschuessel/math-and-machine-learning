@@ -144,6 +144,11 @@ def main(experiment=1,
 
     train(model, env, optimizer, number_of_games=number_of_games, log_dir=log_dir)
 
+    print("Save Model")
+    models_dir = Path(log_dir/"models")
+    models_dir.mkdir(parents=True, exist_ok=True)
+    torch.save(model.state_dict(), models_dir / f"final-model.pth")
+
 
 
 if __name__ == "__main__": 

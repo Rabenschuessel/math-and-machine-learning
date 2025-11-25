@@ -96,7 +96,8 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
 #### Main
 ################################################################################
 def main(experiment=1, 
-         epochs=10):
+         epochs=10,
+         model_path=None):
     log_dir    = Path("logs/im/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -118,6 +119,8 @@ def main(experiment=1,
 
     print("Load Model")
     model             = ChessFeedForward([512, 512, 512])
+    if model_path is not None: 
+        model.load_state_dict(torch.load(model_path))
     model             = model.to(device)
     optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
     loss_fn           = torch.nn.CrossEntropyLoss()
@@ -131,14 +134,14 @@ def main(experiment=1,
 
         if epoch % 2 == 0: 
             tqdm.write("Save Checkpoint")
-            torch.save(model.state_dict(), models_dir / f"checkpoint-{epoch}-{val_holdout}-model.pth")
+            torch.save(model.state_dict(), models_dir / f"checkpoint-{epoch}.pth")
 
 
     tqdm.write("Validation")
     test(val_dl, model, loss_fn, device)
 
     print("Save Model")
-    torch.save(model.state_dict(), models_dir / f"trained-{val_holdout}-final-model.pth")
+    torch.save(model.state_dict(), models_dir / f"final-model.pth")
 
 
 
@@ -146,9 +149,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="immitation learning", 
         description="transform chess puzzle dataset")
-    parser.add_argument('-n', '--epochs' , default=10, type=int)
-    parser.add_argument('-e', '--experiment', default=1, type=int)
+    parser.add_argument('-e', '--epochs' , default=10, type=int)
+    parser.add_argument('-n', '--experiment-name', default=1, type=int)
+    parser.add_argument('-m', '--model', default=None)
     args = parser.parse_args()
 
-    main(experiment=args.experiment, epochs=args.epochs)
+    main(experiment=args.experiment, epochs=args.epochs, model_path=args.model)
 
