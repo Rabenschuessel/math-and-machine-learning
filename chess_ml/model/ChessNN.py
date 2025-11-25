@@ -6,6 +6,8 @@ from chess import WHITE, Board, Move
 from collections.abc import Iterable
 import math
 
+from torch.types import Device
+
 class ChessNN(nn.Module): 
     input_shape = (64, 12)
     input_size  = math.prod(input_shape)
@@ -55,7 +57,7 @@ class ChessNN(nn.Module):
         device = next(self.parameters()).device
         input  = self.board_to_tensor(board).unsqueeze(0).to(device)
         output = self(input)
-        distr  = self.tensor_to_move_distribution(output, board)
+        distr  = self.tensor_to_move_distribution(output, board, device)
         action = distr.sample()
 
         move_idx = torch.unravel_index(action, ChessNN.output_shape)
@@ -86,7 +88,7 @@ class ChessNN(nn.Module):
 
 
     @staticmethod
-    def tensor_to_move_distribution(tensor: Tensor, board: Board) -> Categorical: 
+    def tensor_to_move_distribution(tensor: Tensor, board: Board, device: Device) -> Categorical: 
         '''Transforms model output to legal move distribution. 
 
         Parameters: 
@@ -95,7 +97,7 @@ class ChessNN(nn.Module):
         Returns: 
             move distribution: legal move distribution  
         '''
-        mask   = ChessNN.move_mask(board)
+        mask   = ChessNN.move_mask(board).to(device)
         logits = tensor.masked_fill(~mask, float('-inf'))
         distr  = Categorical(logits=logits)
 
