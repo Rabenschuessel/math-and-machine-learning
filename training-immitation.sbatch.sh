@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH -o ./log/%x.out
 #SBATCH -e ./log/%x.err
-#SBATCH --job-name=ImmitationLearningChess
+#SBATCH --job-name=immitation-learning
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
 #SBATCH --time=15:00:00

@@ -1,12 +1,12 @@
 #!/bin/bash
 #SBATCH -o ./log/%x.out
 #SBATCH -e ./log/%x.err
-#SBATCH --job-name=ReinforcementLearningChess
+#SBATCH --job-name=reinforcement-learning
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
-#SBATCH --time=15:00:00
+#SBATCH --time=05:00:00
 #SBATCH --gpus=rtx2080ti:1
-#SBATCH --mem=4G
+#SBATCH --mem=2G
 
 # setup python env
 module purge

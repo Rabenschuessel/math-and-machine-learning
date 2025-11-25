@@ -154,5 +154,5 @@ if __name__ == "__main__":
     parser.add_argument('-m', '--model', default=None)
     args = parser.parse_args()
 
-    main(experiment=args.experiment, epochs=args.epochs, model_path=args.model)
+    main(experiment=args.experiment_name, epochs=args.epochs, model_path=args.model)
 
