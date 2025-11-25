@@ -4,7 +4,7 @@
 #SBATCH --job-name=ReinforcementLearningChess
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
-#SBATCH --time=01:30:00
+#SBATCH --time=15:00:00
 #SBATCH --gpus=rtx2080ti:1
 #SBATCH --mem=4G
 
@@ -16,6 +16,5 @@ conda activate chess_ml
 
 
 # start immitation 
-python -m chess_ml.train.immitation "$@" \
-	--experiment 1 \
-	--epochs 1
+python -m chess_ml.train.reinforcement "$@" \
+	--experiment 0 

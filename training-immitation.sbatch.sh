@@ -4,7 +4,7 @@
 #SBATCH --job-name=ImmitationLearningChess
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
-#SBATCH --time=01:30:00
+#SBATCH --time=15:00:00
 #SBATCH --gpus=rtx2080ti:1
 #SBATCH --mem=8G
 
