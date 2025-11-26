@@ -48,14 +48,13 @@ def train(dataloader, model, loss_fn, optimizer, device:Union[str,device]="cpu")
                               total=len(dataloader),
                               desc ="Training Routine",
                               unit ="Batch"):
-        x = ChessNN.fen_to_tensor(x)
-        y = ChessNN.move_to_tensor(y)
-        x, y = x.to(device), y.to(device)
-
-        # Compute prediction error
-        pred = model(x)
-        # soft = torch.softmax(pred, dim=1)
-        loss = loss_fn(pred, y)
+        m = ChessNN.fen_to_mask(x).to(device)
+        x = ChessNN.fen_to_tensor(x).to(device)
+        y = ChessNN.move_to_tensor(y).to(device)
+        pred   = model(x)
+        logits = pred.masked_fill(~m, float('-inf'))
+        soft = torch.softmax(logits, dim=1)
+        loss = loss_fn(soft, y)
 
         # Backpropagation
         optimizer.zero_grad()
@@ -80,13 +79,14 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
                                    total=len(dataloader),
                                    desc ="Testing Model",
                                    unit ="Batch"):
-            x = ChessNN.fen_to_tensor(x).to(device)
             m = ChessNN.fen_to_mask(x).to(device)
+            x = ChessNN.fen_to_tensor(x).to(device)
             y = ChessNN.move_to_tensor(y).to(device)
-            pred = model(x)
+            pred   = model(x)
             logits = pred.masked_fill(~m, float('-inf'))
+            soft = torch.softmax(logits, dim=1)
 
-            test_loss += loss_fn(logits, y).item()
+            test_loss += loss_fn(soft, y).item()
             correct   += (pred.argmax(1) == y.argmax(1)).type(torch.float).sum().item()
     test_loss /= num_batches
     correct   /= size
