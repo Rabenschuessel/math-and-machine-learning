@@ -3,6 +3,7 @@ import torch
 import chess
 import chess.svg
 import cairosvg
+from torch.distributions import one_hot_categorical
 from chess_ml.env.Environment import Environment
 from chess_ml.env.Rewards import attack_center
 from chess_ml.model.ChessNN import ChessNN
@@ -54,5 +55,32 @@ import chess.pgn
 game = chess.pgn.Game.from_board(board)
 with open("game.pgn", "w") as f:
     print(game, file=f)
+
+
+
+
+import chess
+import torch
+from chess_ml.model.FeedForward import ChessFeedForward
+from chess_ml.model import ChessNN
+model    = ChessFeedForward([512, 512, 512])
+loss_fn  = torch.nn.CrossEntropyLoss()
+board    = chess.Board()
+fen      = board.fen()
+fen      = [fen, fen, fen]
+moves    = ['a2a4','a2a3', 'b2b4']
+
+
+
+
+import pandas as pd
+df = pd.read_csv('./data/lichess_puzzle_transformed.csv')
+
+
+df.columns
+
+up = df[~df["Themes"].str.contains("underPromotion")]
+
+len(up)
 
 

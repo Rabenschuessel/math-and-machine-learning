@@ -24,19 +24,31 @@ def transform_position(row: pd.Series):
     if board.turn == chess.BLACK: 
         board = board.mirror()
 
+
+    # The first move and other moves by that player tend to be blunders
+    # only train on the good moves
+    skip  = True
+
     # create different positions from whole solution
     solutions = []
     positions = []
     for move in moves: 
         if color == chess.BLACK: 
             move = mirror_move(move)
-        solutions.append(move)
-        positions.append(board.fen())
+
+        if (board.piece_at(move.from_square).piece_type == chess.PAWN 
+                and chess.square_rank(move.to_square) in [0, 7]):
+            move.promotion = chess.QUEEN
+
+        if not skip: 
+            solutions.append(move)
+            positions.append(board.fen())
 
         # update board state
         board.push(move)
         board = board.mirror()
         color = not color
+        skip  = not skip
 
     # update row
     row["Moves"] = solutions 
@@ -56,7 +68,8 @@ def main():
 
     tqdm.tqdm.pandas()
     df1 = pd.read_csv(args.input)
-    # df1 = df1.head(5)
+    # df1 = df1.head(5000)
+    df1 = df1[~df1["Themes"].str.contains("underPromotion")]
     df1 = df1.progress_apply(transform_position, axis=1)
     df1 = df1.explode(["FEN", "Moves"])
     df1.to_csv(args.output)

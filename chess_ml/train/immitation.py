@@ -22,8 +22,9 @@ from chess_ml.model.FeedForward import ChessFeedForward
 ################################################################################
 #### Dataset
 ################################################################################
-def get_dataloader(validation=0.0, batch_size=512): 
-    dataset         = PuzzleDataset()
+def get_dataloader(path, validation=0.0, batch_size=512): 
+
+    dataset         = PuzzleDataset(path=path)
     size            = int(len(dataset) * (1 - validation))
     train_size      = int(0.9 * size)
     test_size       = size - train_size
@@ -44,24 +45,29 @@ def get_dataloader(validation=0.0, batch_size=512):
 def train(dataloader, model, loss_fn, optimizer, device:Union[str,device]="cpu"):
 
     model.train()
-    for batch, (x, y) in tqdm(enumerate(dataloader),
+    for batch, (fens, moves) in tqdm(enumerate(dataloader),
                               total=len(dataloader),
                               desc ="Training Routine",
                               unit ="Batch"):
-        m = ChessNN.fen_to_mask(x).to(device)
-        x = ChessNN.fen_to_tensor(x).to(device)
-        y = ChessNN.move_to_tensor(y).to(device)
+        m = ChessNN.fen_to_mask(fens).to(device)
+        x = ChessNN.fen_to_tensor(fens).to(device)
+        y = ChessNN.move_to_labels(moves).to(device)
         pred   = model(x)
         logits = pred.masked_fill(~m, float('-inf'))
-        soft = torch.softmax(logits, dim=1)
-        loss = loss_fn(soft, y)
+        loss   = loss_fn(logits, y)
+
+
+        if (m[range(len(y)), y] == False).sum() != 0:
+            idx = torch.argwhere(m[range(len(y)), y] == False)
+            tqdm.write(fens[idx])
+            tqdm.write(moves[idx])
 
         # Backpropagation
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
-        if batch % 100 == 0:
+        if batch % 1 == 0:
             loss = loss.item()
             tqdm.write(f"batch: {batch} loss: {loss:>7f}")
 
@@ -81,13 +87,13 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
                                    unit ="Batch"):
             m = ChessNN.fen_to_mask(x).to(device)
             x = ChessNN.fen_to_tensor(x).to(device)
-            y = ChessNN.move_to_tensor(y).to(device)
+            y = ChessNN.move_to_labels(y).to(device)
             pred   = model(x)
             logits = pred.masked_fill(~m, float('-inf'))
-            soft = torch.softmax(logits, dim=1)
+            # soft = torch.softmax(logits, dim=1)
 
-            test_loss += loss_fn(soft, y).item()
-            correct   += (pred.argmax(1) == y.argmax(1)).type(torch.float).sum().item()
+            test_loss += loss_fn(logits, y).item()
+            correct   += (pred.argmax(1) == y).type(torch.float).sum().item()
     test_loss /= num_batches
     correct   /= size
     print(f"Test Error: \n Accuracy {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
@@ -98,7 +104,8 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
 ################################################################################
 def main(experiment=1, 
          epochs=10,
-         model_path=None):
+         model_path=None, 
+         path=None):
     log_dir    = Path("logs/im/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -116,7 +123,7 @@ def main(experiment=1,
     print("training on {}".format(device))
 
     print("Load Dataset")
-    train_dl, test_dl, val_dl = get_dataloader(val_holdout)
+    train_dl, test_dl, val_dl = get_dataloader(path, val_holdout)
 
     print("Load Model")
     model             = ChessFeedForward([512, 512, 512])
@@ -153,7 +160,10 @@ if __name__ == "__main__":
     parser.add_argument('-e', '--epochs' , default=10, type=int)
     parser.add_argument('-n', '--experiment-name', default=1, type=int)
     parser.add_argument('-m', '--model', default=None)
+    parser.add_argument('-d', '--data', default='./data/lichess_puzzle_labeled.csv')
     args = parser.parse_args()
 
-    main(experiment=args.experiment_name, epochs=args.epochs, model_path=args.model)
+    main(experiment=args.experiment_name, epochs=args.epochs, model_path=args.model, path=args.data)
+
+
 

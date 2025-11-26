@@ -147,7 +147,7 @@ class ChessNN(nn.Module):
 
 
     @staticmethod
-    def move_to_tensor(moves): 
+    def move_to_one_hot(moves): 
         '''
         generate labels from move (uci) iterable
         '''
@@ -159,3 +159,12 @@ class ChessNN(nn.Module):
         labels[idx] = 1
         labels      = labels.flatten(start_dim=1)
         return labels
+
+
+    @staticmethod
+    def move_to_labels(moves): 
+        '''
+        generate labels from move (uci) iterable
+        '''
+        return ChessNN.move_to_one_hot(moves).argmax(dim=1)
+
