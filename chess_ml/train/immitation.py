@@ -22,7 +22,7 @@ from chess_ml.model.FeedForward import ChessFeedForward
 ################################################################################
 #### Dataset
 ################################################################################
-def get_dataloader(validation=0.0): 
+def get_dataloader(validation=0.0, batch_size=512): 
     dataset         = PuzzleDataset()
     size            = int(len(dataset) * (1 - validation))
     train_size      = int(0.9 * size)
@@ -31,9 +31,9 @@ def get_dataloader(validation=0.0):
     splits          = [train_size, test_size, validation_size]
     train_dataset, test_dataset, val_dataset = random_split(dataset, splits)
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    test_loader  = DataLoader(test_dataset, batch_size=32)
-    val_loader   = DataLoader(val_dataset, batch_size=32)
+    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
+    test_loader  = DataLoader(test_dataset, batch_size=batch_size)
+    val_loader   = DataLoader(val_dataset, batch_size=batch_size)
     return train_loader, test_loader, val_loader
 
 
@@ -80,12 +80,13 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
                                    total=len(dataloader),
                                    desc ="Testing Model",
                                    unit ="Batch"):
-            x = ChessNN.fen_to_tensor(x)
-            y = ChessNN.move_to_tensor(y)
-            x, y = x.to(device), y.to(device)
+            x = ChessNN.fen_to_tensor(x).to(device)
+            m = ChessNN.fen_to_mask(x).to(device)
+            y = ChessNN.move_to_tensor(y).to(device)
             pred = model(x)
+            logits = pred.masked_fill(~m, float('-inf'))
 
-            test_loss += loss_fn(pred, y).item()
+            test_loss += loss_fn(logits, y).item()
             correct   += (pred.argmax(1) == y.argmax(1)).type(torch.float).sum().item()
     test_loss /= num_batches
     correct   /= size

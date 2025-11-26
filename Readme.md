@@ -101,3 +101,7 @@ Jakob:
 - [x] RL 
     - [x] Selfplay script
     - [x] Reward Functions
+- [ ] improvements
+    - [ ] cnn 
+    - [ ] masking illegal moves in immitation learning
+    - [ ] bigger batch size immitation learning 512-4096

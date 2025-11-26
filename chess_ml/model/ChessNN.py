@@ -135,6 +135,18 @@ class ChessNN(nn.Module):
 
 
     @staticmethod
+    def fen_to_mask(fen): 
+        '''
+        transforms fen or fen iterable into batch 
+        '''
+        if isinstance(fen, str) or not isinstance(fen, Iterable):
+            fen = [fen] 
+
+        tensors = [ChessNN.move_mask(Board(f)) for f in fen]
+        return torch.stack(tensors, dim=0)
+
+
+    @staticmethod
     def move_to_tensor(moves): 
         '''
         generate labels from move (uci) iterable
