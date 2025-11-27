@@ -69,7 +69,15 @@ def main():
     tqdm.tqdm.pandas()
     df1 = pd.read_csv(args.input)
     # df1 = df1.head(5000)
+
+    # filter out all that contain non queen promotions
     df1 = df1[~df1["Themes"].str.contains("underPromotion")]
+    df1 = df1[df1["Moves"].transform( lambda r: 
+            all([
+                chess.Move.from_uci(m).promotion in [None, chess.QUEEN] 
+                for m in r.split()
+            ]))]
+
     df1 = df1.progress_apply(transform_position, axis=1)
     df1 = df1.explode(["FEN", "Moves"])
     df1.to_csv(args.output)

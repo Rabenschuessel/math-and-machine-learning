@@ -73,14 +73,42 @@ moves    = ['a2a4','a2a3', 'b2b4']
 
 
 
+import chess
 import pandas as pd
-df = pd.read_csv('./data/lichess_puzzle_transformed.csv')
+df = pd.read_csv('./data/lichess_puzzle_transformed.csv', nrows=5000)
 
 
-df.columns
+df["Moves"].str.split()
+
+
+
+mask = df["Moves"].transform( lambda r: 
+        all([
+            chess.Move.from_uci(m).promotion in [None, chess.QUEEN] 
+            for m in r.split()
+        ]))
+
+mask  = moves.apply(lambda r: not all([
+    m.promotion is None or
+    m.promotion is chess.QUEEN
+    for m in r
+]))
+
+df[mask]["Moves"]
+
 
 up = df[~df["Themes"].str.contains("underPromotion")]
 
 len(up)
 
 
+
+
+a = chess.Move.from_uci("a2b2")
+print(a.promotion in [None, chess.PieceType])
+
+a = chess.Move.from_uci("b7b8r")
+print(a.promotion in [None, chess.QUEEN])
+
+a = chess.Move.from_uci("a2b8q")
+print(a.promotion in [None, chess.QUEEN])
