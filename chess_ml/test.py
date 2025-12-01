@@ -6,6 +6,7 @@ import cairosvg
 from torch.distributions import one_hot_categorical
 from chess_ml.env.Environment import Environment
 from chess_ml.env.Rewards import attack_center
+from chess_ml.model import Convolution
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
 
@@ -112,3 +113,29 @@ print(a.promotion in [None, chess.QUEEN])
 
 a = chess.Move.from_uci("a2b8q")
 print(a.promotion in [None, chess.QUEEN])
+
+
+
+
+import importlib 
+import chess
+import chess_ml.model.Convolution as Convolution
+from chess_ml.model.ChessNN import ChessNN
+
+importlib.reload(Convolution)
+model = Convolution.ChessCNN()
+board = chess.Board()
+
+t = ChessNN.board_to_tensor(board).unsqueeze(0)
+model(t).shape
+
+
+
+
+model.predict(board)
+
+
+ChessNN.board_to_tensor(board).unsqueeze(0).view()
+
+
+

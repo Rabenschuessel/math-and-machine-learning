@@ -22,20 +22,20 @@ from chess_ml.model.FeedForward import ChessFeedForward
 ################################################################################
 #### Dataset
 ################################################################################
-def get_dataloader(path, validation=0.0, batch_size=512): 
+def get_dataloader(path, test=0.0, batch_size=512): 
 
     dataset         = PuzzleDataset(path=path)
-    size            = int(len(dataset) * (1 - validation))
+    size            = int(len(dataset) * (1 - test))
     train_size      = int(0.9 * size)
-    test_size       = size - train_size
-    validation_size = len(dataset) - train_size - test_size
-    splits          = [train_size, test_size, validation_size]
-    train_dataset, test_dataset, val_dataset = random_split(dataset, splits)
+    val_size       = size - train_size
+    test_size = len(dataset) - train_size - val_size
+    splits          = [train_size, val_size, test_size]
+    train_dataset, val_dataset, test_dataset = random_split(dataset, splits)
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
-    test_loader  = DataLoader(test_dataset, batch_size=batch_size)
-    val_loader   = DataLoader(val_dataset, batch_size=batch_size)
-    return train_loader, test_loader, val_loader
+    val_loader  = DataLoader(val_dataset, batch_size=batch_size)
+    test_loader   = DataLoader(test_dataset, batch_size=batch_size)
+    return train_loader, val_loader, test_loader
 
 
 
@@ -93,7 +93,7 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
             # soft = torch.softmax(logits, dim=1)
 
             test_loss += loss_fn(logits, y).item()
-            correct   += (pred.argmax(1) == y).type(torch.float).sum().item()
+            correct   += (logits.argmax(1) == y).type(torch.float).sum().item()
     test_loss /= num_batches
     correct   /= size
     print(f"Test Error: \n Accuracy {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
@@ -118,12 +118,12 @@ def main(experiment=1,
 
     torch.manual_seed(0)
     np.random.seed(0)
-    val_holdout = 0.1
+    test_holdout = 0.1
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("training on {}".format(device))
 
     print("Load Dataset")
-    train_dl, test_dl, val_dl = get_dataloader(path, val_holdout)
+    train_dl, val_dl, test_dl = get_dataloader(path, test_holdout)
 
     print("Load Model")
     model             = ChessFeedForward([512, 512, 512])
@@ -137,16 +137,16 @@ def main(experiment=1,
         tqdm.write("Train Model")
         train(train_dl, model, loss_fn, optimizer, device)
 
-        tqdm.write("Test Model")
-        test(test_dl, model, loss_fn, device)
+        tqdm.write("Validate Model")
+        test(val_dl, model, loss_fn, device)
 
         if epoch % 2 == 0: 
             tqdm.write("Save Checkpoint")
             torch.save(model.state_dict(), models_dir / f"checkpoint-{epoch}.pth")
 
 
-    tqdm.write("Validation")
-    test(val_dl, model, loss_fn, device)
+    tqdm.write("Test")
+    test(test_dl, model, loss_fn, device)
 
     print("Save Model")
     torch.save(model.state_dict(), models_dir / f"final-model.pth")
@@ -167,3 +167,25 @@ if __name__ == "__main__":
 
 
 
+################################################################################
+### Testing
+################################################################################
+torch.manual_seed(0)
+np.random.seed(0)
+test_holdout = 0.1
+device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print("training on {}".format(device))
+
+print("Load Dataset")
+path = './data/lichess_puzzle_labeled.csv'
+train_dl, val_dl, test_dl = get_dataloader(path, test_holdout)
+
+print("Load Model")
+model             = ChessFeedForward([512, 512, 512])
+model.load_state_dict(torch.load('./checkpoint-0.pth', map_location="cpu"))
+model             = model.to(device)
+optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
+loss_fn           = torch.nn.CrossEntropyLoss()
+
+tqdm.write("Validate Model")
+test(val_dl, model, loss_fn, device)

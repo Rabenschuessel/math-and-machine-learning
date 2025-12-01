@@ -2,14 +2,14 @@ import torch
 from typing import Tuple
 from torch import nn, Tensor
 from torch.distributions import Categorical
-from chess import WHITE, Board, Move
+from chess import WHITE, Board, Move, square_file, square_rank
 from collections.abc import Iterable
 import math
 
 from torch.types import Device
 
 class ChessNN(nn.Module): 
-    input_shape = (64, 12)
+    input_shape = (12, 8, 8)
     input_size  = math.prod(input_shape)
 
     output_shape = (64, 64)
@@ -77,8 +77,9 @@ class ChessNN(nn.Module):
         '''
         
         # indice list where pieces exist
-        idx = [(square,
-               (piece.piece_type - 1) + (6 if piece.color else 0))
+        idx = [((piece.piece_type - 1) + (6 if piece.color else 0),
+                square_file(square), 
+                square_rank(square)) 
                for square,piece in board.piece_map().items()]
 
         # create tensor
