@@ -35,7 +35,7 @@ class ChessNN(nn.Module):
         super().__init__()
 
 
-    def predict(self, board: Board, epsilon=0) -> Tuple[Move, Tensor]: 
+    def predict(self, board: Board) -> Tuple[Move, Tensor]: 
         '''Wrapper for forward which parses Board position and 
         returns legal move distribution and sampled move. 
 
@@ -63,14 +63,6 @@ class ChessNN(nn.Module):
         output = self(input)
         distr  = self.tensor_to_move_distribution(output, board, device)
         action = distr.sample()
-
-
-        if epsilon > 0: 
-            mask   = ChessNN.move_mask(board).to(device)
-            ones   = torch.ones(ChessNN.output_size).to(device)
-            masked = ones.masked_fill(~mask, float('-inf'))
-            uni    = Categorical(logits=masked)
-            action = uni.sample()
 
         move_idx = torch.unravel_index(action, ChessNN.output_shape)
         move     = Move(*move_idx)

@@ -22,6 +22,7 @@ from chess_ml.env import Rewards
 from chess_ml.env.Environment import Environment
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
+from chess_ml.model.Convolution import ChessCNN
 
 
 
@@ -46,7 +47,6 @@ def train(model : ChessNN,
           env   : Environment,
           optimizer, 
           gamma, 
-          epsilon, 
           number_of_games=10, 
           log_dir="log/rl/",
           device:Union[str,device]="cpu"
@@ -72,7 +72,7 @@ def train(model : ChessNN,
 
         while not over:
             # get the action
-            move, log = model.predict(board, epsilon)
+            move, log = model.predict(board)
             log       = log.unsqueeze(0)
 
             # step and evaluate
@@ -99,8 +99,8 @@ def train(model : ChessNN,
             policy_loss.append(-log_prob * Gt)
 
         # logging 
-        logging.info("  Accumulated rewards: \n    white: {}\n    black: {}"
-              .format(sum(rewards_white), sum(rewards_black)))
+        # logging.info("  Accumulated rewards: \n    white: {}\n    black: {}"
+        #       .format(sum(rewards_white), sum(rewards_black)))
 
         # save pgn to logs
         game = env.get_game()
@@ -125,7 +125,7 @@ def train(model : ChessNN,
 ################################################################################
 #### Main
 ################################################################################
-def main(experiment, number_of_games, model_path, epochs, gamma, epsilon): 
+def main(experiment, number_of_games, model_path, epochs, gamma, lr=1e-2): 
     log_dir    = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -139,17 +139,18 @@ def main(experiment, number_of_games, model_path, epochs, gamma, epsilon):
 
     device    = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     env       = Environment(rewards=Rewards.all_rewards)
-    model     = ChessFeedForward([512, 512, 512])
+    # model     = ChessFeedForward([512, 512, 512])
+    model     = ChessCNN()
     if model_path is not None: 
         model.load_state_dict(torch.load(model_path))
     model     = model.to(device)
-    optimizer = optim.Adam(model.parameters(), lr=1e-2)
+    optimizer = optim.Adam(model.parameters(), lr=lr)
 
     for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):
         tqdm.write("Train Model")
-        train(model, env, optimizer, gamma, epsilon, number_of_games=number_of_games, log_dir=log_dir)
+        train(model, env, optimizer, gamma, number_of_games=number_of_games, log_dir=log_dir)
 
-        if epoch % 2 == 0: 
+        if epoch % 1 == 0: 
             tqdm.write("Save Checkpoint")
             torch.save(model.state_dict(), models_dir / f"checkpoint-{epoch}.pth")
 
@@ -160,19 +161,17 @@ def main(experiment, number_of_games, model_path, epochs, gamma, epsilon):
 
 if __name__ == "__main__": 
     parser = argparse.ArgumentParser(
-        prog="immitation learning", 
+        prog="reinforcement learning", 
         description="transform chess puzzle dataset")
     parser.add_argument('-g', '--games' , default=1000, type=int)
     parser.add_argument('-n', '--experiment-name', default=0, type=int)
     parser.add_argument('-e', '--epochs', default=100, type=int)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('--gamma', default=0.9, type=float)
-    parser.add_argument('--epsilon', default=0, type=float)
     args = parser.parse_args()
 
     main(experiment=args.experiment_name,
          number_of_games=args.games,
          model_path=args.model,
          epochs=args.epochs,
-         gamma=args.gamma,
-         epsilon=args.epsilon)
+         gamma=args.gamma)

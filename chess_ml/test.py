@@ -127,11 +127,7 @@ model = Convolution.ChessCNN()
 board = chess.Board()
 
 t = ChessNN.board_to_tensor(board).unsqueeze(0)
+
 model(t).shape
 
-model.predict(board, epsilon=1)
-
-
-
-
-model.predict(board, epsilon=0)
+model.predict(board)

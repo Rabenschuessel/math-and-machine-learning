@@ -1,7 +1,7 @@
 '''
-This module provides a training procedure for immitation learning
+This module provides a training procedure for imitation learning
 
-    python -m chess_ml.train.immitation
+    python -m chess_ml.train.imitation
 '''
 
 
@@ -155,7 +155,7 @@ def main(experiment, epochs, model_path, path, test_holdout, lr=1e-3):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="immitation learning", 
+        prog="imitation learning", 
         description="transform chess puzzle dataset")
     parser.add_argument('-e', '--epochs' , default=10, type=int)
     parser.add_argument('-n', '--experiment-name', default=1, type=int)

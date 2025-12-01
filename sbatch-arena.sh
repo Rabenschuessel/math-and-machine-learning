@@ -1,12 +1,13 @@
 #!/bin/bash
 #SBATCH -o ./log/%x.out
 #SBATCH -e ./log/%x.err
-#SBATCH --job-name=immitation-learning
+#SBATCH --job-name=reinforcement-learning
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
-#SBATCH --time=15:00:00
+#SBATCH --time=05:00:00
 #SBATCH --gpus=rtx2080ti:1
-#SBATCH --mem=8G
+#SBATCH --mem=2G
+
 
 # setup python env
 module purge
@@ -15,7 +16,4 @@ eval "$(conda shell.bash hook)"
 conda activate chess_ml
 
 
-# start immitation 
-python -m chess_ml.train.immitation "$@" \
-	--experiment-name 0 \
-	--epochs 10
+python -m chess_ml.arena "$@"

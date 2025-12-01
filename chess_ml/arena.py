@@ -10,6 +10,7 @@ from chess_ml.env.Environment import Environment
 from chess_ml.env.Rewards import attack_center
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
+from chess_ml.model.Convolution import ChessCNN
 
 
 def pit(model1, model2, plot=False, game=0): 
@@ -56,13 +57,15 @@ def main(path1=None, path2=None, experiment=0):
     games_dir.mkdir(parents=True, exist_ok=True)
 
     games = 1000
-    m1 = ChessFeedForward([512, 512, 512])
+    # m1 = ChessFeedForward([512, 512, 512])
+    m1 = ChessCNN()
     if path1 is not None: 
         state = torch.load(path1, map_location="cpu")
         m1.load_state_dict(state)
     m1.eval()
 
-    m2 = ChessFeedForward([512, 512, 512])
+    # m2 = ChessFeedForward([512, 512, 512])
+    m2 = ChessCNN()
     if path2 is not None: 
         state = torch.load(path2, map_location="cpu")
         m2.load_state_dict(state)
