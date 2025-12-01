@@ -8,6 +8,7 @@ import math
 
 from torch.types import Device
 
+
 class ChessNN(nn.Module): 
     input_shape = (12, 8, 8)
     input_size  = math.prod(input_shape)
@@ -34,7 +35,7 @@ class ChessNN(nn.Module):
         super().__init__()
 
 
-    def predict(self, board: Board) -> Tuple[Move, Tensor]: 
+    def predict(self, board: Board, epsilon=0) -> Tuple[Move, Tensor]: 
         '''Wrapper for forward which parses Board position and 
         returns legal move distribution and sampled move. 
 
@@ -46,6 +47,7 @@ class ChessNN(nn.Module):
 
         Parameters: 
             board: current position. Expects white to play 
+            gamma: probability to explore and sample from uniform distribution
         Returns: 
             samples move: move sampled from output distribution. The move is guaranteed to be legal
             prob_dist: log probabilies of model output masked by move legality
@@ -54,11 +56,21 @@ class ChessNN(nn.Module):
         if board.turn is not WHITE: 
             raise ValueError("Invalid Parameter: expects white to play")
 
+
+
         device = next(self.parameters()).device
         input  = self.board_to_tensor(board).unsqueeze(0).to(device)
         output = self(input)
         distr  = self.tensor_to_move_distribution(output, board, device)
         action = distr.sample()
+
+
+        if epsilon > 0: 
+            mask   = ChessNN.move_mask(board).to(device)
+            ones   = torch.ones(ChessNN.output_size).to(device)
+            masked = ones.masked_fill(~mask, float('-inf'))
+            uni    = Categorical(logits=masked)
+            action = uni.sample()
 
         move_idx = torch.unravel_index(action, ChessNN.output_shape)
         move     = Move(*move_idx)

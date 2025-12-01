@@ -4,7 +4,7 @@ from typing import List
 
 
 class ChessCNN(ChessNN): 
-    def __init__(self, conv:List[tuple[int, int, int]]=[(12, 32, 3), (32, 64, 3), (64, 128, 3), (128, 128, 2)], fc=128):
+    def __init__(self, conv:List[tuple[int, int, int]]=[(12, 32, 3), (32, 64, 3), (64, 128, 3), (128, 256, 3)]):
         '''Feed forward implementation of ChessNN.
 
         Parameters: 
@@ -16,13 +16,14 @@ class ChessCNN(ChessNN):
         self.conv = nn.Sequential(
             *[v 
                 for c in conv
-                for v in (nn.Conv2d(*c), nn.ReLU())
+                for v in (nn.Conv2d(*c, padding=1), nn.ReLU())
             ],
         )
 
+        fc_input = 8*8*conv[-1][1]
         self.fc = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(fc, output)
+            nn.Linear(fc_input, output)
         )
 
 

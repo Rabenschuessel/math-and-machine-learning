@@ -120,7 +120,7 @@ print(a.promotion in [None, chess.QUEEN])
 import importlib 
 import chess
 import chess_ml.model.Convolution as Convolution
-from chess_ml.model.ChessNN import ChessNN
+from chess_ml.model import ChessNN 
 
 importlib.reload(Convolution)
 model = Convolution.ChessCNN()
@@ -129,13 +129,9 @@ board = chess.Board()
 t = ChessNN.board_to_tensor(board).unsqueeze(0)
 model(t).shape
 
+model.predict(board, epsilon=1)
 
 
 
-model.predict(board)
 
-
-ChessNN.board_to_tensor(board).unsqueeze(0).view()
-
-
-
+model.predict(board, epsilon=0)

@@ -17,13 +17,13 @@ from typing import Union
 
 from chess_ml.data import PuzzleDataset
 from chess_ml.model import ChessNN
+from chess_ml.model.Convolution import ChessCNN
 from chess_ml.model.FeedForward import ChessFeedForward
 
 ################################################################################
 #### Dataset
 ################################################################################
 def get_dataloader(path, test=0.0, batch_size=512): 
-
     dataset         = PuzzleDataset(path=path)
     size            = int(len(dataset) * (1 - test))
     train_size      = int(0.9 * size)
@@ -47,7 +47,7 @@ def train(dataloader, model, loss_fn, optimizer, device:Union[str,device]="cpu")
     model.train()
     for batch, (fens, moves) in tqdm(enumerate(dataloader),
                               total=len(dataloader),
-                              desc ="Training Routine",
+                              desc ="Training",
                               unit ="Batch"):
         m = ChessNN.fen_to_mask(fens).to(device)
         x = ChessNN.fen_to_tensor(fens).to(device)
@@ -67,7 +67,7 @@ def train(dataloader, model, loss_fn, optimizer, device:Union[str,device]="cpu")
         loss.backward()
         optimizer.step()
 
-        if batch % 1 == 0:
+        if batch % 10 == 0:
             loss = loss.item()
             tqdm.write(f"batch: {batch} loss: {loss:>7f}")
 
@@ -83,7 +83,7 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
     with torch.no_grad():
         for x, y in tqdm(dataloader,
                                    total=len(dataloader),
-                                   desc ="Testing Model",
+                                   desc ="Testing/Validation",
                                    unit ="Batch"):
             m = ChessNN.fen_to_mask(x).to(device)
             x = ChessNN.fen_to_tensor(x).to(device)
@@ -96,16 +96,14 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
             correct   += (logits.argmax(1) == y).type(torch.float).sum().item()
     test_loss /= num_batches
     correct   /= size
-    print(f"Test Error: \n Accuracy {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    tqdm.write(f"Test Error: \n Accuracy {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f}")
+    return test_loss
 
 
 ################################################################################
 #### Main
 ################################################################################
-def main(experiment=1, 
-         epochs=10,
-         model_path=None, 
-         path=None):
+def main(experiment, epochs, model_path, path, test_holdout, lr=1e-3):
     log_dir    = Path("logs/im/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -118,7 +116,6 @@ def main(experiment=1,
 
     torch.manual_seed(0)
     np.random.seed(0)
-    test_holdout = 0.1
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("training on {}".format(device))
 
@@ -126,23 +123,26 @@ def main(experiment=1,
     train_dl, val_dl, test_dl = get_dataloader(path, test_holdout)
 
     print("Load Model")
-    model             = ChessFeedForward([512, 512, 512])
+    # model             = ChessFeedForward([512, 512, 512])
+    model               = ChessCNN()
     if model_path is not None: 
         model.load_state_dict(torch.load(model_path))
     model             = model.to(device)
-    optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
+    optimizer         = torch.optim.Adam(model.parameters(), lr=lr)
     loss_fn           = torch.nn.CrossEntropyLoss()
+    min_loss          = float('inf')
+
+    test(val_dl, model, loss_fn, device)
 
     for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):
-        tqdm.write("Train Model")
         train(train_dl, model, loss_fn, optimizer, device)
 
-        tqdm.write("Validate Model")
-        test(val_dl, model, loss_fn, device)
+        loss = test(val_dl, model, loss_fn, device)
 
-        if epoch % 2 == 0: 
+        if loss < min_loss: 
+            min_loss = loss
             tqdm.write("Save Checkpoint")
-            torch.save(model.state_dict(), models_dir / f"checkpoint-{epoch}.pth")
+            torch.save(model.state_dict(), models_dir / f"checkpoint-best-{epoch}.pth")
 
 
     tqdm.write("Test")
@@ -161,31 +161,17 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--experiment-name', default=1, type=int)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('-d', '--data', default='./data/lichess_puzzle_labeled.csv')
+    parser.add_argument('-t', '--test_holdout', default=0.1, type=float)
     args = parser.parse_args()
 
-    main(experiment=args.experiment_name, epochs=args.epochs, model_path=args.model, path=args.data)
+    main(experiment=args.experiment_name,
+         epochs=args.epochs,
+         model_path=args.model,
+         path=args.data, 
+         test_holdout=args.test_holdout)
 
 
 
 ################################################################################
 ### Testing
 ################################################################################
-torch.manual_seed(0)
-np.random.seed(0)
-test_holdout = 0.1
-device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print("training on {}".format(device))
-
-print("Load Dataset")
-path = './data/lichess_puzzle_labeled.csv'
-train_dl, val_dl, test_dl = get_dataloader(path, test_holdout)
-
-print("Load Model")
-model             = ChessFeedForward([512, 512, 512])
-model.load_state_dict(torch.load('./checkpoint-0.pth', map_location="cpu"))
-model             = model.to(device)
-optimizer         = torch.optim.Adam(model.parameters(), lr=1e-3)
-loss_fn           = torch.nn.CrossEntropyLoss()
-
-tqdm.write("Validate Model")
-test(val_dl, model, loss_fn, device)

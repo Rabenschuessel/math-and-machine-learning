@@ -7,6 +7,7 @@ This module provides a training procedure for reinforcement learning
 
 import argparse
 import logging
+from math import gamma
 import chess
 import chess.pgn
 import torch 
@@ -24,7 +25,7 @@ from chess_ml.model.FeedForward import ChessFeedForward
 
 
 
-def compute_discounted_rewards(rewards, gamma=0.99):
+def compute_discounted_rewards(rewards, gamma):
     ''' 
     compute discounted rewards over one game
     '''
@@ -44,6 +45,8 @@ def compute_discounted_rewards(rewards, gamma=0.99):
 def train(model : ChessNN,
           env   : Environment,
           optimizer, 
+          gamma, 
+          epsilon, 
           number_of_games=10, 
           log_dir="log/rl/",
           device:Union[str,device]="cpu"
@@ -69,7 +72,7 @@ def train(model : ChessNN,
 
         while not over:
             # get the action
-            move, log = model.predict(board)
+            move, log = model.predict(board, epsilon)
             log       = log.unsqueeze(0)
 
             # step and evaluate
@@ -86,12 +89,12 @@ def train(model : ChessNN,
 
         # white rewards
         policy_loss = []
-        discounted_rewards_white = compute_discounted_rewards(rewards_white)
+        discounted_rewards_white = compute_discounted_rewards(rewards_white, gamma)
         for log_prob, Gt in zip(log_probs_white, discounted_rewards_white):
             policy_loss.append(-log_prob * Gt)
 
         # black rewards 
-        discounted_rewards_black = compute_discounted_rewards(rewards_black)
+        discounted_rewards_black = compute_discounted_rewards(rewards_black, gamma)
         for log_prob, Gt in zip(log_probs_black, discounted_rewards_black):
             policy_loss.append(-log_prob * Gt)
 
@@ -122,10 +125,7 @@ def train(model : ChessNN,
 ################################################################################
 #### Main
 ################################################################################
-def main(experiment=1,
-         number_of_games=100, 
-         model_path=None, 
-         epochs=100): 
+def main(experiment, number_of_games, model_path, epochs, gamma, epsilon): 
     log_dir    = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -147,7 +147,7 @@ def main(experiment=1,
 
     for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):
         tqdm.write("Train Model")
-        train(model, env, optimizer, number_of_games=number_of_games, log_dir=log_dir)
+        train(model, env, optimizer, gamma, epsilon, number_of_games=number_of_games, log_dir=log_dir)
 
         if epoch % 2 == 0: 
             tqdm.write("Save Checkpoint")
@@ -166,9 +166,13 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--experiment-name', default=0, type=int)
     parser.add_argument('-e', '--epochs', default=100, type=int)
     parser.add_argument('-m', '--model', default=None)
+    parser.add_argument('--gamma', default=0.9, type=float)
+    parser.add_argument('--epsilon', default=0, type=float)
     args = parser.parse_args()
 
     main(experiment=args.experiment_name,
          number_of_games=args.games,
          model_path=args.model,
-         epochs=args.epochs)
+         epochs=args.epochs,
+         gamma=args.gamma,
+         epsilon=args.epsilon)
