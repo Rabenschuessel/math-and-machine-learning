@@ -23,7 +23,7 @@ from chess_ml.model.FeedForward import ChessFeedForward
 ################################################################################
 #### Dataset
 ################################################################################
-def get_dataloader(path, test=0.0, batch_size=512): 
+def get_dataloader(path, test=0.0, batch_size=256): 
     dataset         = PuzzleDataset(path=path)
     size            = int(len(dataset) * (1 - test))
     train_size      = int(0.9 * size)
@@ -67,7 +67,7 @@ def train(dataloader, model, loss_fn, optimizer, device:Union[str,device]="cpu")
         loss.backward()
         optimizer.step()
 
-        if batch % 10 == 0:
+        if batch % 100 == 0:
             loss = loss.item()
             tqdm.write(f"batch: {batch} loss: {loss:>7f}")
 

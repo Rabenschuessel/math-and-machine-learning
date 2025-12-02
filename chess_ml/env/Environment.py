@@ -1,8 +1,11 @@
+
 import logging
 import chess
 import chess.pgn
+from collections import deque, deque
 from chess import Board, Move 
 from typing import Tuple
+import chess_ml.env.Rewards as Rewards
 
 
 class Environment: 
@@ -19,12 +22,20 @@ class Environment:
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
 
+        self.mov_q = deque()
+        self.pos_q = deque([Board()])
+        self.reward_hist = []
+
 
 
     def reset(self) -> Board: 
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
         self._board.reset()
+
+        self.mov_q = deque()
+        self.pos_q = deque([Board()])
+        self.reward_hist = []
         return self._board
 
 
@@ -33,8 +44,23 @@ class Environment:
         return chess.pgn.Game.from_board(self._board)
 
 
+    def get_rewards(self): 
+        # add reward for last move of the game
+        if len(self.pos_q) > 0: 
+            self.pos_q.clear()
+            self.mov_q.clear()
+            r = [0 if reward.__name__ != "win" 
+                   else Rewards.WIN_VALUE for reward in self._rewards]
+            self.reward_hist.append(r)
+        # otherwise add zero rewards so that all games in batch have the same length
+        else: 
+            r = [0 for reward in self._rewards]
+            self.reward_hist.append(r)
 
-    def step(self, move: Move) -> Tuple[Board, float, bool]: 
+        return self.reward_hist[0::2], self.reward_hist[1::2]
+
+
+    def step(self, move: Move) -> Tuple[Board, bool]: 
         '''
         Perform move and evaluate rewards. 
         Mirrors board afterwards so white is always playing
@@ -42,7 +68,18 @@ class Environment:
         # used for batch processing
         if self._board.is_game_over(): 
             board  = self._board if self._board.turn == chess.WHITE else self._board.mirror()
-            return board, 0, True
+            # add reward for last move of the game
+            if len(self.pos_q) > 0: 
+                self.pos_q.clear()
+                self.mov_q.clear()
+                r = [0 if reward.__name__ != "win" 
+                       else Rewards.WIN_VALUE for reward in self._rewards]
+                self.reward_hist.append(r)
+            # otherwise add zero rewards (for batch processing)
+            else: 
+                r = [0 for reward in self._rewards]
+                self.reward_hist.append(r)
+            return board, True
 
         # model returns white move, mirror move to black if black to play
         if self._board.turn == chess.BLACK:
@@ -56,27 +93,38 @@ class Environment:
 
         self._board.push(move)
         board  = self._board if self._board.turn == chess.WHITE else self._board.mirror()
-        reward = self.evaluate_rewards(move)
+        self.evaluate_rewards(move)
 
-        return board, reward, self._board.is_game_over()
+
+        return board, self._board.is_game_over()
     
 
 
-    def evaluate_rewards(self, move: Move) -> float: 
-        # calculate rewards
-        rewards     = [reward(self._board, move) for reward in self._rewards]
-        acc_rewards = sum(rewards)
+    def evaluate_rewards(self, move: Move): 
+        self.pos_q.append(self._board.copy())
+        self.mov_q.append(move)
 
-        # logging
-        reward_dict = {reward_f.__name__: reward 
-                        for reward_f, reward in zip(self._rewards, rewards)}
-        logging.info("  Move: {}\n    Acc Rewards: {} \n    Rewards: {}"
-                     .format(move, acc_rewards, reward_dict))
-        for k, v in reward_dict.items(): 
-            self.reward_log[k].append(v)
-        self.reward_log["sum"].append(acc_rewards)
+        if len(self.pos_q) >= 3: 
+            state  = self.pos_q.popleft()
+            result = self.pos_q[1]
+            move   = self.mov_q.popleft()
 
-        return acc_rewards
+            rewards     = [reward(state, move, result) for reward in self._rewards]
+            self.reward_hist.append(rewards)
+
+        #
+        # # calculate rewards
+        #
+        # # logging
+        # reward_dict = {reward_f.__name__: reward 
+        #                 for reward_f, reward in zip(self._rewards, rewards)}
+        # logging.info("  Move: {}\n    Acc Rewards: {} \n    Rewards: {}"
+        #              .format(move, acc_rewards, reward_dict))
+        # for k, v in reward_dict.items(): 
+        #     self.reward_log[k].append(v)
+        # self.reward_log["sum"].append(acc_rewards)
+        #
+        # return acc_rewards
     
 
     

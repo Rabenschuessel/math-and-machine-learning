@@ -20,7 +20,7 @@ class ChessNN(nn.Module):
     def __init__(self):
         '''Abstract base class for chess neural network. 
 
-        Handles transformation from board to input tensor `board_to_tensor()` 
+        Handles transformation from board to input tensor `boards_to_tensor()` 
         and from output tensor to legal move `tensor_to_move_distribution()`. 
         The `predict()` function takes a `Board` and returns a sampled legal `Move`. 
 
@@ -62,7 +62,7 @@ class ChessNN(nn.Module):
 
 
         device  = next(self.parameters()).device
-        input   = self.board_to_tensor(boards).to(device)
+        input   = self.boards_to_tensor(boards).to(device)
         output  = self(input)
         distr   = self.tensor_to_move_distribution(output, boards, device)
         actions = distr.sample()

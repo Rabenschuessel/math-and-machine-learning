@@ -4,7 +4,7 @@ from typing import List
 
 
 class ChessFeedForward(ChessNN): 
-    def __init__(self, hidden:List[int]=[600]):
+    def __init__(self, hidden:List[int]=[512, 512, 512]):
         '''Feed forward implementation of ChessNN.
 
         Parameters: 
