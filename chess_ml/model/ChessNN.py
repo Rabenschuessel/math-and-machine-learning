@@ -1,12 +1,13 @@
 import torch 
-from typing import Tuple
+from typing import Sequence, Tuple
 from torch import nn, Tensor
 from torch.distributions import Categorical
-from chess import WHITE, Board, Move, square_file, square_rank
+from chess import BLACK, WHITE, Board, Move, square_file, square_rank
 from collections.abc import Iterable
 import math
 
 from torch.types import Device
+
 
 
 class ChessNN(nn.Module): 
@@ -35,7 +36,7 @@ class ChessNN(nn.Module):
         super().__init__()
 
 
-    def predict(self, board: Board) -> Tuple[Move, Tensor]: 
+    def predict(self, boards: Sequence[Board]|Board) -> Tuple[Sequence[Move], Tensor]: 
         '''Wrapper for forward which parses Board position and 
         returns legal move distribution and sampled move. 
 
@@ -53,25 +54,27 @@ class ChessNN(nn.Module):
             prob_dist: log probabilies of model output masked by move legality
         '''
 
-        if board.turn is not WHITE: 
+        if isinstance(boards, Board):
+            boards = [boards] 
+
+        if BLACK in [b.turn for b in boards]:
             raise ValueError("Invalid Parameter: expects white to play")
 
 
+        device  = next(self.parameters()).device
+        input   = self.board_to_tensor(boards).to(device)
+        output  = self(input)
+        distr   = self.tensor_to_move_distribution(output, boards, device)
+        actions = distr.sample()
 
-        device = next(self.parameters()).device
-        input  = self.board_to_tensor(board).unsqueeze(0).to(device)
-        output = self(input)
-        distr  = self.tensor_to_move_distribution(output, board, device)
-        action = distr.sample()
-
-        move_idx = torch.unravel_index(action, ChessNN.output_shape)
-        move     = Move(*move_idx)
-        log_prob = distr.log_prob(action)
-        return move, log_prob
+        move_idx = torch.unravel_index(actions, ChessNN.output_shape)
+        moves    = [Move(*idx) for idx in zip(*move_idx)]
+        log_prob = distr.log_prob(actions)
+        return moves, log_prob
 
 
     @staticmethod
-    def board_to_tensor(board: Board): 
+    def boards_to_tensor(boards: Sequence[Board]): 
         '''Transforms board into input tensor.  
 
         Parameters: 
@@ -81,19 +84,22 @@ class ChessNN(nn.Module):
         '''
         
         # indice list where pieces exist
-        idx = [((piece.piece_type - 1) + (6 if piece.color else 0),
+        idx = [(b,
+                (piece.piece_type - 1) + (6 if piece.color else 0),
                 square_file(square), 
                 square_rank(square)) 
-               for square,piece in board.piece_map().items()]
+                for b, board in enumerate(boards)
+                for square,piece in board.piece_map().items()
+        ]
 
         # create tensor
-        t                   = torch.zeros(ChessNN.input_shape)
+        t                   = torch.zeros(len(boards), *ChessNN.input_shape)
         t[tuple(zip(*idx))] = 1
         return t
 
 
     @staticmethod
-    def tensor_to_move_distribution(tensor: Tensor, board: Board, device: Device) -> Categorical: 
+    def tensor_to_move_distribution(tensor: Tensor, boards: Iterable[Board], device: Device) -> Categorical: 
         '''Transforms model output to legal move distribution. 
 
         Parameters: 
@@ -102,7 +108,7 @@ class ChessNN(nn.Module):
         Returns: 
             move distribution: legal move distribution  
         '''
-        mask   = ChessNN.move_mask(board).to(device)
+        mask   = torch.stack([ChessNN.move_mask(board) for board in boards]).to(device)
         logits = tensor.masked_fill(~mask, float('-inf'))
         distr  = Categorical(logits=logits)
 
@@ -135,8 +141,9 @@ class ChessNN(nn.Module):
         if isinstance(fen, str) or not isinstance(fen, Iterable):
             fen = [fen] 
 
-        tensors = [ChessNN.board_to_tensor(Board(f)) for f in fen]
-        return torch.stack(tensors, dim=0)
+        boards = [Board(f) for f in fen]
+        tensor = ChessNN.boards_to_tensor(boards)
+        return tensor
 
 
     @staticmethod

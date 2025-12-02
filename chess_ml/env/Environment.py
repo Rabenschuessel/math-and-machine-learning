@@ -39,6 +39,11 @@ class Environment:
         Perform move and evaluate rewards. 
         Mirrors board afterwards so white is always playing
         '''
+        # used for batch processing
+        if self._board.is_game_over(): 
+            board  = self._board if self._board.turn == chess.WHITE else self._board.mirror()
+            return board, 0, True
+
         # model returns white move, mirror move to black if black to play
         if self._board.turn == chess.BLACK:
             move = Environment.mirror_move(move)
