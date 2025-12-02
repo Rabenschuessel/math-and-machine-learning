@@ -103,6 +103,7 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma):
 
 def main(model_path, experiment, batches, batch_size, gamma): 
     env_params = {"rewards": Rewards.ALL}
+    device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     log_dir    = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -114,7 +115,7 @@ def main(model_path, experiment, batches, batch_size, gamma):
 
     model = ChessCNN()
     if model_path is not None: 
-        state = torch.load("models/checkpoint-best-5.pth", map_location="cpu")
+        state = torch.load(model_path, map_location=device)
         model.load_state_dict(state)
 
 
