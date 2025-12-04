@@ -1,15 +1,15 @@
 # Quickstart Guide
 
 
-# IT things 
+## IT things 
 
-## Access to Infrastructure
+### Access to Infrastructure
 
 Request access to SC [here](https://www.sc.uni-leipzig.de/).
 You can then access the server from within the uni vpn. 
 
 
-## Python Environment 
+### Python Environment 
 
 Install conda [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
 
@@ -22,7 +22,7 @@ conda activate chess_ml
 ```
 
 
-## Download and Preprocess Data
+### Download and Preprocess Data
 
 1. Download and unzip the data with: 
 
@@ -54,11 +54,11 @@ conda activate chess_ml
 
 
 
-# Library Usage  
+## Library Usage  
 
 There are two core components you will use for training models: Imitation Learning and Reinforcement Learning. 
 
-## Imitation Learning 
+### Imitation Learning 
 
 You can either train a model locally with this: 
 
@@ -78,7 +78,7 @@ sbatch ./sbatch-training-imitation.sh
 
 
 
-## Reinforcement Learning 
+### Reinforcement Learning 
 
 Again you can either train a model locally with this: 
 
@@ -97,7 +97,7 @@ sbatch ./sbatch-training-reinforcement.sh
 ```
 
 
-# Adjusting the Code
+## Adjusting the Code
 
 Not all parameters can be accessed from the cli, thus you may need to delve into the code. 
 As a rule of thumb, those are the files and directories you may be interested in: 
@@ -113,7 +113,7 @@ As a rule of thumb, those are the files and directories you may be interested in
 
 
 
-# Environment and rewards
+## Environment and rewards
 
 You can create a new environment with: 
 
