@@ -19,6 +19,7 @@ from chess_ml.data import PuzzleDataset
 from chess_ml.model import ChessNN
 from chess_ml.model.Convolution import ChessCNN
 from chess_ml.model.FeedForward import ChessFeedForward
+from chess_ml.model.ResBlock import ChessResBlock
 
 ################################################################################
 #### Dataset
@@ -124,7 +125,8 @@ def main(experiment, epochs, model_path, path, test_holdout, lr=1e-3):
 
     print("Load Model")
     # model             = ChessFeedForward([512, 512, 512])
-    model               = ChessCNN()
+    # model             = ChessCNN()
+    model              = ChessResBlock()
     if model_path is not None: 
         model.load_state_dict(torch.load(model_path))
     model             = model.to(device)

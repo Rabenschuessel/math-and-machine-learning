@@ -6,12 +6,14 @@ from  chess_ml.env.Environment import Environment
 from tqdm import tqdm
 import torch 
 import chess
+import xarray as xr
 from collections import Counter
 from torchrl.objectives.value.functional import reward2go
 from chess import Move
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.Convolution import ChessCNN
 from chess_ml.model.FeedForward import ChessFeedForward
+from chess_ml.model.ResBlock import ChessResBlock
 
 
 
@@ -71,13 +73,29 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
     loss.backward()
     optim.step()
 
-    # Logging 
+    # Saving games as pgn
     path = Path(log_dir) / "games" / "batch-{}".format(batch_nr)
     path.mkdir(parents=True, exist_ok=True)
     for gamenr, env in enumerate(envs): 
         game = env.get_game()
         with open(path / "game-{:06d}.pgn".format(gamenr), "w") as f:
             print(game, file=f)
+
+    # Saving white rewards
+    ds = xr.DataArray(
+        rewards_white.cpu().numpy(), 
+        dims=['game', 'time', 'reward'], 
+        coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
+    )
+    ds.to_netcdf(path / "rewards_white.nc")
+
+    # Saving black rewards
+    ds = xr.DataArray(
+        rewards_black.cpu().numpy(), 
+        dims=['game', 'time', 'reward'], 
+        coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
+    )
+    ds.to_netcdf(path / "rewards_black.nc")
 
     tqdm.write("loss: {}".format(loss.item()))
     tqdm.write(str(Counter([env._board.result() for env in envs])))
@@ -130,7 +148,7 @@ if __name__ == "__main__":
         description="transform chess puzzle dataset")
     parser.add_argument('-b', '--batches' , default=1000, type=int)
     parser.add_argument('-g', '--batch_size' , default=32, type=int)
-    parser.add_argument('-n', '--experiment-name', default=0, type=int)
+    parser.add_argument('-n', '--experiment-name', default=0)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('--gamma', default=0.9, type=float)
     args = parser.parse_args()

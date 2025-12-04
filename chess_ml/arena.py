@@ -1,51 +1,48 @@
 import argparse
+from collections import Counter
 import torch
 import chess
 import chess.svg
-import cairosvg
 import logging
 from pathlib import Path
 from tqdm import tqdm
 from chess_ml.env.Environment import Environment
-from chess_ml.env.Rewards import attack_center
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
 from chess_ml.model.Convolution import ChessCNN
 
 
-def pit(model1, model2, plot=False, game=0): 
-    '''Pit two models against each other for a certain number of games'''
-    env   = Environment([attack_center])
-    board = env.reset()
 
-    i    = 0
-    over = False
-    if plot: 
-        flip = False
-        svg  = chess.svg.board(board)
-        cairosvg.svg2png(bytestring=svg.encode('utf-8'),
-                         write_to="games/game-{:02d}-move-{:03d}.png".format(game, i))
 
-    while not over:
-        if i % 2 == 0: 
-            move, _        = model1.predict(board)
-        else: 
-            move, _        = model2.predict(board)
+def pit(model1, model2, envs, log_dir):
+    color = chess.WHITE
+    boards = [env.reset() for env in envs]
+    done   = [False]
 
-        board, _, over = env.step(move)
+    with tqdm(total=len(envs), desc="Games", unit="Games") as pbar: 
+        while not all(done): 
+            if color is chess.WHITE: 
+                moves, log_probs = model1.predict(boards)
+            else: 
+                moves, log_probs = model2.predict(boards)
+            boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
 
-        i   += 1
-        if plot: 
-            flip = not flip
-            b    = board.mirror() if flip else board
+            color = not color 
+            pbar.update(sum(done) - pbar.n)
 
-    return env._board.result(), env.get_game()
+    # Logging 
+    for gamenr, env in enumerate(envs): 
+        game = env.get_game()
+        with open(log_dir / "game-{:06d}.pgn".format(gamenr), "w") as f:
+            print(game, file=f)
+
+    return (Counter([env._board.result() for env in envs]))
 
 
 
 
 
-def main(path1=None, path2=None, experiment=0):
+def main(path1, path2, experiment, games):
     log_dir    = Path("logs/arena/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -56,7 +53,6 @@ def main(path1=None, path2=None, experiment=0):
     games_dir = Path(log_dir/"models")
     games_dir.mkdir(parents=True, exist_ok=True)
 
-    games = 1000
     # m1 = ChessFeedForward([512, 512, 512])
     m1 = ChessCNN()
     if path1 is not None: 
@@ -72,35 +68,25 @@ def main(path1=None, path2=None, experiment=0):
     m2.eval()
 
     with torch.no_grad():
-        results = {"win": 0, "draw": 0, "loss": 0}
-        for i in tqdm(range(games), unit="games"): 
-            r,g = pit(m1, m2)
-            if r == "1/2-1/2": 
-                results["draw"] += 1
-            elif r == "1-0": 
-                results["win"] += 1
-            elif r == "0-1": 
-                results["loss"] += 1
-            else: 
-                print("parsing error")
+        envs = [Environment() for i in range(games)]
+        results = pit(m1, m2, envs, log_dir)
+        print(results)
 
-            tqdm.write(results.__str__())
-            with open(games_dir / "game-{:06d}.pgn".format(i), "w") as f:
-                print(g, file=f)
-
-    print(results)
 
 
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        prog="immitation learning", 
-        description="transform chess puzzle dataset")
+    parser = argparse.ArgumentParser(prog="pit models against each other")
     parser.add_argument('-1', '--model1', default=None)
     parser.add_argument('-2', '--model2', default=None)
+    parser.add_argument('-e', '--experiment', default=0, type=int)
+    parser.add_argument('-g', '--games', default=100, type=int)
     args = parser.parse_args()
-    main(path1=args.model1, path2=args.model2)
+    main(path1=args.model1,
+         path2=args.model2,
+         games=args.games,
+         experiment=args.experiment)
 
 
 
