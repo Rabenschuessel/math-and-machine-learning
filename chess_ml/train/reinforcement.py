@@ -55,9 +55,28 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
     log_probs_black = torch.stack(log_probs_black)
     done_black      = torch.stack(done_black)
 
+    # Logging reward values
     tqdm.write("reward order: {}".format([r.__name__ for r in envs[0]._rewards]))
     tqdm.write("mean white reward values: {}".format(rewards_white.abs().sum(dim=(0,1))))
     tqdm.write("mean black reward values: {}".format(rewards_black.abs().sum(dim=(0,1))))
+
+    # Saving white rewards
+    path = Path(log_dir) / "games" / "batch-{}".format(batch_nr)
+    path.mkdir(parents=True, exist_ok=True)
+    ds = xr.DataArray(
+        rewards_white.cpu().numpy(), 
+        dims=['game', 'time', 'reward'], 
+        coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
+    )
+    ds.to_netcdf(path / "rewards_white.nc")
+
+    # Saving black rewards
+    ds = xr.DataArray(
+        rewards_black.cpu().numpy(), 
+        dims=['game', 'time', 'reward'], 
+        coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
+    )
+    ds.to_netcdf(path / "rewards_black.nc")
 
     rewards_white = rewards_white.sum(dim=-1).permute(1, 0)
     rewards_black = rewards_black.sum(dim=-1).permute(1, 0)
@@ -74,28 +93,11 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
     optim.step()
 
     # Saving games as pgn
-    path = Path(log_dir) / "games" / "batch-{}".format(batch_nr)
-    path.mkdir(parents=True, exist_ok=True)
     for gamenr, env in enumerate(envs): 
         game = env.get_game()
         with open(path / "game-{:06d}.pgn".format(gamenr), "w") as f:
             print(game, file=f)
 
-    # Saving white rewards
-    ds = xr.DataArray(
-        rewards_white.cpu().numpy(), 
-        dims=['game', 'time', 'reward'], 
-        coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
-    )
-    ds.to_netcdf(path / "rewards_white.nc")
-
-    # Saving black rewards
-    ds = xr.DataArray(
-        rewards_black.cpu().numpy(), 
-        dims=['game', 'time', 'reward'], 
-        coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
-    )
-    ds.to_netcdf(path / "rewards_black.nc")
 
     tqdm.write("loss: {}".format(loss.item()))
     tqdm.write(str(Counter([env._board.result() for env in envs])))

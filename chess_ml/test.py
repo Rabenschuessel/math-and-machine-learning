@@ -17,3 +17,9 @@ ds = xr.DataArray(
 
 
 ds.sum(dim=("game", "time"))
+
+
+[0.5, 1]
+gamma = 0.9
+
+[1.4, 1]

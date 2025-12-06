@@ -107,3 +107,7 @@ Jakob:
     - [ ] bigger batch size immitation learning 512-4096
 - [ ] remove underpromotion from dataset
 - [ ] remove first move from dataset (often blunder)
+
+
+
+- [ ] actor critic
