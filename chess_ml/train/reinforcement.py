@@ -55,42 +55,69 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma, epsilon=0.1):
 
     device = next(model.parameters()).device
     boards = [env.reset() for env in envs]
-    done   = [False]
+    done   = [False] * len(envs)
 
     with tqdm(total=len(envs), desc="Games", unit="Games") as pbar: 
         while not all(done): 
             # Pure value-based RL: get state values (with gradients for training)
             values = model.predict_values(boards)
             
-            # Epsilon-greedy action selection using policy logits as action values
-            moves = []
-            for board in boards:
-                # With probability epsilon, pick random action (exploration)
+            # Epsilon-greedy action selection using successor-state values (vectorized)
+            moves = [None] * len(boards)
+            # collect successor boards for exploitation decisions
+            succ_boards = []
+            succ_owner = []  # (game_index)
+            succ_moves = []  # corresponding Move
+
+            for i, board in enumerate(boards):
+                # If the game is already finished, append dummy move (env.step ignores it)
+                if done[i]:
+                    moves[i] = Move(0, 0)
+                    continue
+
+                legal = list(board.legal_moves)
+                if len(legal) == 0:
+                    moves[i] = Move(0, 0)
+                    continue
+
                 if torch.rand(1).item() < epsilon:
-                    move = list(board.legal_moves)[torch.randint(0, board.legal_moves.count(), (1,)).item()]
+                    # exploration: random legal move
+                    moves[i] = legal[torch.randint(0, len(legal), (1,)).item()]
                 else:
-                    # Otherwise pick greedy action (exploitation) based on policy logits
-                    with torch.no_grad():
-                        input_tensor = model.boards_to_tensor([board]).to(device)
-                        output = model(input_tensor)
-                        if isinstance(output, tuple) or isinstance(output, list):
-                            logits, _ = output
-                        else:
-                            logits = output
-                    
-                    # Mask illegal moves and pick argmax
-                    logits_flat = logits.view(-1)
-                    legal_moves = list(board.legal_moves)
-                    legal_move_indices = [move.from_square * 64 + move.to_square for move in legal_moves]
-                    
-                    # Set illegal moves to very negative value
-                    masked_logits = torch.full_like(logits_flat, float('-inf'))
-                    masked_logits[legal_move_indices] = logits_flat[legal_move_indices]
-                    
-                    best_move_idx = torch.argmax(masked_logits).item()
-                    move = Move(best_move_idx // 64, best_move_idx % 64)
-                
-                moves.append(move)
+                    # exploitation: evaluate successor states later in batch
+                    for m in legal:
+                        nb = board.copy()
+                        nb.push(m)
+                        # ensure successor is represented with white to play
+                        if nb.turn != chess.WHITE:
+                            nb = nb.mirror()
+                        succ_boards.append(nb)
+                        succ_owner.append(i)
+                        succ_moves.append(m)
+
+            # evaluate all successor states in a single forward pass
+            if len(succ_boards) > 0:
+                succ_tensor = model.boards_to_tensor(succ_boards).to(device)
+                with torch.no_grad():
+                    out = model(succ_tensor)
+                    if isinstance(out, (tuple, list)):
+                        _, succ_values = out
+                    else:
+                        succ_values = out
+
+                # succ_values is shape (N, ) or (N) depending on model; ensure 1D tensor
+                succ_values = succ_values.view(-1).cpu()
+
+                # pick best successor per game
+                from collections import defaultdict
+                best_idx = defaultdict(lambda: (None, float('-inf')))
+                for idx, owner in enumerate(succ_owner):
+                    val = float(succ_values[idx].item())
+                    if val > best_idx[owner][1]:
+                        best_idx[owner] = (idx, val)
+
+                for owner, (sidx, _) in best_idx.items():
+                    moves[owner] = succ_moves[sidx]
             
             boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
 

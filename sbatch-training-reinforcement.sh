@@ -15,6 +15,9 @@ eval "$(conda shell.bash hook)"
 conda activate chess_ml
 
 
-# start immitation 
+# Generate unique experiment name using SLURM job ID
+EXPERIMENT_NAME="job-${SLURM_JOB_ID}"
+
+# start reinforcement learning with unique folder per submission
 python -m chess_ml.train.reinforcement "$@" \
-	--experiment 0 
+	--experiment "${EXPERIMENT_NAME}" 
