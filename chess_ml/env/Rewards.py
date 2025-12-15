@@ -4,12 +4,13 @@ from chess import Board, Move
 import chess
 
 
+WIN_VALUE = 10.0
 def win(state: Board, move: Move, result: Board): 
     '''returns Rewards.WIN_VALUE on white and -WIN_VALUE on loss
     '''
     if (outcome := result.outcome()) is not None: 
         if outcome.winner is None: 
-            return 0.5 * WIN_VALUE
+            return 0
         if outcome.winner is state.turn: 
             return WIN_VALUE
         return -WIN_VALUE
@@ -72,7 +73,6 @@ def material(state: Board, move: Move, result: Board):
 
 
 ALL       = [control_center, material, win]
-WIN_VALUE = 1.0
 
 
 ################################################################################

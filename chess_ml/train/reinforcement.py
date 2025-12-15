@@ -26,17 +26,6 @@ def log_batch(path, envs, rewards_white, rewards_black, batch_nr):
     # Saving white rewards
     path = Path(path) / "games" / "batch-{:04d}".format(batch_nr)
     path.mkdir(parents=True, exist_ok=True)
-    # xr.DataArray(
-    #     rewards_white.cpu().numpy(), 
-    #     dims=['game', 'time', 'reward'], 
-    #     coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
-    # ).to_netcdf(path / "rewards_white.nc")
-    #
-    # xr.DataArray(
-    #     rewards_black.cpu().numpy(), 
-    #     dims=['game', 'time', 'reward'], 
-    #     coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
-    # ).to_netcdf(path / "rewards_black.nc")
 
     (xr.concat([ 
         xr.Dataset(
