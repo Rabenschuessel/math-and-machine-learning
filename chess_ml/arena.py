@@ -22,9 +22,9 @@ def pit(model1, model2, envs, log_dir):
     with tqdm(total=len(envs), desc="Games", unit="Games") as pbar: 
         while not all(done): 
             if color is chess.WHITE: 
-                moves, log_probs = model1.predict(boards)
+                moves, log_probs, _ = model1.predict(boards)
             else: 
-                moves, log_probs = model2.predict(boards)
+                moves, log_probs, _ = model2.predict(boards)
             boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
 
             color = not color 

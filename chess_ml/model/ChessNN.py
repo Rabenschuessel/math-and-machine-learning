@@ -36,41 +36,28 @@ class ChessNN(nn.Module):
         super().__init__()
 
 
-    def predict(self, boards: Sequence[Board]|Board) -> Tuple[Sequence[Move], Tensor]: 
-        '''Wrapper for forward which parses Board position and 
-        returns legal move distribution and sampled move. 
-
-        Handles parsing the position into a tensor that the model can work with. 
-        Then forward is applied to predict a move. 
-        A move distribution is generated from the model output and the legal moves in the position. 
-        A move is sampled from this distribution and `predict` returns 
-        a legal move and the distribution it was sampled from. 
-
-        Parameters: 
-            board: current position. Expects white to play 
-            gamma: probability to explore and sample from uniform distribution
-        Returns: 
-            samples move: move sampled from output distribution. The move is guaranteed to be legal
-            prob_dist: log probabilies of model output masked by move legality
+    def predict_values(self, boards: Sequence[Board]|Board) -> Tensor:
+        '''Get state values for pure value-based RL (no policy sampling).
+        
+        Parameters:
+            boards: current positions. Expects white to play
+        Returns:
+            values: state value estimates
         '''
-
         if isinstance(boards, Board):
-            boards = [boards] 
-
+            boards = [boards]
+        
         if BLACK in [b.turn for b in boards]:
             raise ValueError("Invalid Parameter: expects white to play")
-
-
-        device  = next(self.parameters()).device
-        input   = self.boards_to_tensor(boards).to(device)
-        output  = self(input)
-        distr   = self.tensor_to_move_distribution(output, boards, device)
-        actions = distr.sample()
-
-        move_idx = torch.unravel_index(actions, ChessNN.output_shape)
-        moves    = [Move(*idx) for idx in zip(*move_idx)]
-        log_prob = distr.log_prob(actions)
-        return moves, log_prob
+        
+        device = next(self.parameters()).device
+        input_tensor = self.boards_to_tensor(boards).to(device)
+        output = self(input_tensor)
+        if isinstance(output, tuple) or isinstance(output, list):
+            _, values = output
+        else:
+            values = output
+        return values
 
 
     @staticmethod

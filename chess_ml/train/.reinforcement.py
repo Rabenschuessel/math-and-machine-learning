@@ -72,7 +72,7 @@ def train(model : ChessNN,
 
         while not over:
             # get the action
-            move, log = model.predict(board)
+            move, log, _ = model.predict(board)
             log       = log.unsqueeze(0)
 
             # step and evaluate

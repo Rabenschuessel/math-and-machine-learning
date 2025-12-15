@@ -9,6 +9,7 @@ import chess
 import xarray as xr
 from collections import Counter
 from torchrl.objectives.value.functional import reward2go
+import torch.nn.functional as F
 from chess import Move
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.Convolution import ChessCNN
@@ -17,41 +18,25 @@ from chess_ml.model.ResBlock import ChessResBlock
 
 
 
-def log_batch(path, envs, rewards_white, rewards_black, batch_nr): 
+def log_batch(path, envs, rewards_tensor, batch_nr): 
     # Logging reward values
-    tqdm.write("reward order: {}".format([r.__name__ for r in envs[0]._rewards]))
-    tqdm.write("mean white reward values: {}".format(rewards_white.abs().sum(dim=(0,1))))
-    tqdm.write("mean black reward values: {}".format(rewards_black.abs().sum(dim=(0,1))))
+    tqdm.write("mean reward values: {}".format(rewards_tensor.abs().mean()))
 
-    # Saving white rewards
+    # Saving rewards
     path = Path(path) / "games" / "batch-{:04d}".format(batch_nr)
     path.mkdir(parents=True, exist_ok=True)
-    # xr.DataArray(
-    #     rewards_white.cpu().numpy(), 
-    #     dims=['game', 'time', 'reward'], 
-    #     coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
-    # ).to_netcdf(path / "rewards_white.nc")
-    #
-    # xr.DataArray(
-    #     rewards_black.cpu().numpy(), 
-    #     dims=['game', 'time', 'reward'], 
-    #     coords={ 'reward': [r.__name__ for r in envs[0]._rewards] }
-    # ).to_netcdf(path / "rewards_black.nc")
 
-    (xr.concat([ 
-        xr.Dataset(
-            data_vars={
-                r.__name__: (["game", "turn"],t.cpu().numpy()[:,:,i])
-                for i, r in enumerate(envs[0]._rewards)
-            }, 
-            coords=dict(
-                game=("game", range(t.cpu().numpy().shape[0])),
-                turn=("turn", range(t.cpu().numpy().shape[1])),
-            )
+    # rewards_tensor is shape (T, B) - time steps x batch size
+    ds = xr.Dataset(
+        data_vars={
+            'reward': (["turn", "game"], rewards_tensor.cpu().numpy())
+        },
+        coords=dict(
+            game=("game", range(rewards_tensor.shape[1])),
+            turn=("turn", range(rewards_tensor.shape[0])),
         )
-        for t in [rewards_black, rewards_white]], dim='color', join='outer')
-     .assign_coords(color=[chess.BLACK, chess.WHITE])
-     .to_netcdf(path / "rewards.nc"))
+    )
+    ds.to_netcdf(path / "rewards.nc")
 
 
     # Saving games as pgn
@@ -62,51 +47,103 @@ def log_batch(path, envs, rewards_white, rewards_black, batch_nr):
 
 
 
-def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
+def train_batch(model, optim, envs, log_dir, batch_nr, gamma, epsilon=0.1):
     color = chess.WHITE
-    log_probs_white = []
-    done_white      = []
+    values_all  = []
+    dones_all   = []
+    rewards_all = []
 
-    log_probs_black = []
-    done_black      = []
-
+    device = next(model.parameters()).device
     boards = [env.reset() for env in envs]
     done   = [False]
 
     with tqdm(total=len(envs), desc="Games", unit="Games") as pbar: 
         while not all(done): 
-            moves, log_probs = model.predict(boards)
+            # Pure value-based RL: get state values (with gradients for training)
+            values = model.predict_values(boards)
+            
+            # Epsilon-greedy action selection using policy logits as action values
+            moves = []
+            for board in boards:
+                # With probability epsilon, pick random action (exploration)
+                if torch.rand(1).item() < epsilon:
+                    move = list(board.legal_moves)[torch.randint(0, board.legal_moves.count(), (1,)).item()]
+                else:
+                    # Otherwise pick greedy action (exploitation) based on policy logits
+                    with torch.no_grad():
+                        input_tensor = model.boards_to_tensor([board]).to(device)
+                        output = model(input_tensor)
+                        if isinstance(output, tuple) or isinstance(output, list):
+                            logits, _ = output
+                        else:
+                            logits = output
+                    
+                    # Mask illegal moves and pick argmax
+                    logits_flat = logits.view(-1)
+                    legal_moves = list(board.legal_moves)
+                    legal_move_indices = [move.from_square * 64 + move.to_square for move in legal_moves]
+                    
+                    # Set illegal moves to very negative value
+                    masked_logits = torch.full_like(logits_flat, float('-inf'))
+                    masked_logits[legal_move_indices] = logits_flat[legal_move_indices]
+                    
+                    best_move_idx = torch.argmax(masked_logits).item()
+                    move = Move(best_move_idx // 64, best_move_idx % 64)
+                
+                moves.append(move)
+            
             boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
 
-            if color is chess.WHITE: 
-                log_probs_white.append(log_probs)
-                done_white.append(torch.tensor(done))
-            else: 
-                log_probs_black.append(log_probs)
-                done_black.append(torch.tensor(done))
+            values_all.append(values.to(device))
+            dones_all.append(torch.tensor(done, device=device))
 
-            color = not color 
             pbar.update(sum(done) - pbar.n)
 
     # transform to torch tensors
-    rewards_white, rewards_black = zip(*[env.get_rewards() for env in envs])
-    rewards_white   = torch.tensor(rewards_white)
-    log_probs_white = torch.stack(log_probs_white)
-    done_white      = torch.stack(done_white)
-    rewards_black   = torch.tensor(rewards_black)
-    log_probs_black = torch.stack(log_probs_black)
-    done_black      = torch.stack(done_black)
+    all_rewards = [env.get_rewards() for env in envs]
+    device = next(model.parameters()).device
+    rewards_tensor = torch.tensor([r for r, _ in all_rewards], device=device)
+    
+    values_all  = torch.stack(values_all).to(device)
+    dones_all   = torch.stack(dones_all).to(device)
+    
+    # sum reward components and transpose to (T, B)
+    rewards_tensor = rewards_tensor.sum(dim=-1).permute(1, 0)
+    
+    # values_all and rewards_tensor should have same T dimension
+    # If values_all is longer, trim it
+    T_rewards = rewards_tensor.shape[0]
+    if values_all.shape[0] > T_rewards:
+        values_all = values_all[:T_rewards]
+        dones_all = dones_all[:T_rewards]
 
-    log_batch(log_dir, envs, rewards_white, rewards_black, batch_nr)
+    log_batch(log_dir, envs, rewards_tensor, batch_nr)
+    #batch td(lambda) 
+    # helper to compute lambda-returns (forward view)
+    def lambda_returns(rewards, values, dones, gamma, lam):
+        T, B = rewards.shape
+        G = torch.zeros_like(rewards)
+        G_next = torch.zeros(B, device=rewards.device)
+        for t in range(T - 1, -1, -1):
+            if t + 1 < T:
+                V_tp1 = values[t + 1]
+            else:
+                V_tp1 = torch.zeros_like(G_next)
+            done_mask = dones[t].to(torch.bool)
+            V_tp1 = V_tp1 * (~done_mask)
+            G_next = G_next * (~done_mask)
+            G_t = rewards[t] + gamma * ((1 - lam) * V_tp1 + lam * G_next)
+            G[t] = G_t
+            G_next = G_t
+        return G
 
-    # compute loss
-    rewards_white = rewards_white.sum(dim=-1).permute(1, 0)
-    rewards_black = rewards_black.sum(dim=-1).permute(1, 0)
-    rewards_white = reward2go(rewards_white, done_white, gamma)
-    rewards_black = reward2go(rewards_black, done_black, gamma)
-    loss_white    = (- rewards_white * log_probs_white).sum()
-    loss_black    = (- rewards_black * log_probs_black).sum()
-    loss          = loss_white + loss_black
+    lam = getattr(model, "lambda_", 0.8)
+
+    # compute TD(lambda) returns
+    returns = lambda_returns(rewards_tensor, values_all, dones_all, gamma, lam)
+
+    # value function loss (MSE to TD(lambda) returns) - pure value-based RL
+    loss = F.mse_loss(values_all, returns, reduction='mean')
 
     # optimize
     optim.zero_grad()
@@ -118,14 +155,14 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
 
 
 
-def train(model, optim, batches, batch_size, env_params, log_dir, gamma): 
+def train(model, optim, batches, batch_size, env_params, log_dir, gamma, epsilon=0.1): 
     models_dir = Path(log_dir/"models")
     models_dir.mkdir(parents=True, exist_ok=True)
 
     envs = [Environment(**env_params) for i in range(batch_size)]
 
     for batch in tqdm(range(batches), desc="Batches", unit="Batches"): 
-        train_batch(model, optim, envs, log_dir, batch, gamma)
+        train_batch(model, optim, envs, log_dir, batch, gamma, epsilon)
 
         if batch % 10 == 0: 
             tqdm.write("Save Checkpoint")
@@ -142,7 +179,7 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma):
 
 
 
-def main(model_path, experiment, batches, batch_size, gamma): 
+def main(model_path, experiment, batches, batch_size, gamma, lam, epsilon=0.1): 
     env_params = {"rewards": Rewards.ALL}
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -155,13 +192,16 @@ def main(model_path, experiment, batches, batch_size, gamma):
     )
 
     model = ChessCNN()
+    model = model.to(device)
+    # attach TD(lambda) hyperparameter to model for easy access
+    model.lambda_ = lam
     if model_path is not None: 
         state = torch.load(model_path, map_location=device)
         model.load_state_dict(state)
 
 
     optim = torch.optim.Adam(model.parameters())
-    train(model, optim, batches, batch_size, env_params, log_dir, gamma)
+    train(model, optim, batches, batch_size, env_params, log_dir, gamma, epsilon)
 
 
 
@@ -176,13 +216,17 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--experiment-name', default=0)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('--gamma', default=0.9, type=float)
+    parser.add_argument('--lam', default=0.8, type=float, help='TD(lambda) parameter')
+    parser.add_argument('--epsilon', default=0.1, type=float, help='Epsilon-greedy exploration parameter')
     args = parser.parse_args()
 
     main(experiment=args.experiment_name,
          batches=args.batches,
          batch_size=args.batch_size,
-         model_path=args.model,
-         gamma=args.gamma)
+        model_path=args.model,
+        gamma=args.gamma,
+        lam=args.lam,
+        epsilon=args.epsilon)
 
 
 

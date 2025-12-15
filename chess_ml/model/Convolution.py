@@ -23,14 +23,17 @@ class ChessCNN(ChessNN):
         )
 
         fc_input = 8*8*conv[-1][1]
-        self.fc = nn.Sequential(
-            nn.Flatten(),
-            nn.Linear(fc_input, output)
-        )
+        self.flatten = nn.Flatten()
+        hidden = fc_input
+        self.policy_fc = nn.Linear(fc_input, output)
+        self.value_fc = nn.Linear(fc_input, 1)
 
 
 
 
     def forward(self, x):
         channels = self.conv(x)
-        return self.fc(channels)
+        flat = self.flatten(channels)
+        policy_logits = self.policy_fc(flat)
+        values = self.value_fc(flat).squeeze(-1)
+        return policy_logits, values
