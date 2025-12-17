@@ -29,6 +29,7 @@ len(env1.reward_hist)
 rewards_white1, rewards_black1 = env1.get_rewards()
 rewards_white2, rewards_black2 = env2.get_rewards()
 
+
 rewards_white = [rewards_white1, rewards_white2]
 print(torch.tensor(rewards_white))
 

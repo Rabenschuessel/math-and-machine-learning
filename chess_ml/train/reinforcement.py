@@ -133,9 +133,14 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma):
 
 def main(model_path, experiment, batches, batch_size, gamma): 
     env_params = {"rewards": Rewards.ALL}
-    device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device     = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    log_dir    = Path("logs/rl/experiment-{}".format(experiment))
+    # create a new log dir in 'logs/rl/experiment-<name>/<x>' where x starts from 0
+    log_dir     = Path("logs/rl/experiment-{}".format(experiment))
+    log_dir.mkdir(parents=True, exist_ok=True)
+    experiments = sorted([int(x.name) for x in log_dir.iterdir() if x.is_dir()])
+    new         = 0 if len(experiments) == 0 else (int(experiments[-1]) + 1)
+    log_dir     = (log_dir / "{:03d}".format(new))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         filename=log_dir / 'log.log',
