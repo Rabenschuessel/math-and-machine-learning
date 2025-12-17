@@ -19,9 +19,9 @@ from chess_ml.model.ResBlock import ChessResBlock
 
 def log_batch(path, envs, rewards_white, rewards_black, batch_nr): 
     # Logging reward values
-    tqdm.write("reward order: {}".format([r.__name__ for r in envs[0]._rewards]))
-    tqdm.write("mean white reward values: {}".format(rewards_white.abs().sum(dim=(0,1))))
-    tqdm.write("mean black reward values: {}".format(rewards_black.abs().sum(dim=(0,1))))
+    # tqdm.write("reward order: {}".format([r.__name__ for r in envs[0]._rewards]))
+    # tqdm.write("mean white reward values: {}".format(rewards_white.abs().sum(dim=(0,1))))
+    # tqdm.write("mean black reward values: {}".format(rewards_black.abs().sum(dim=(0,1))))
 
     # Saving white rewards
     path = Path(path) / "games" / "batch-{:04d}".format(batch_nr)
