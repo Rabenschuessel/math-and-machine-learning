@@ -1,4 +1,3 @@
-
 import logging
 import chess
 import chess.pgn
@@ -9,32 +8,36 @@ import chess_ml.env.Rewards as Rewards
 
 
 class Environment: 
-    def __init__(self, rewards=[]):
+    def __init__(self, rewards=[], starting_fen=None):
         '''
         Environment acts as wrapper around `chess.Board` for reinforcement learning. 
         It has a state and returns a reward after each step. 
 
         Parameters: 
             rewards: set of activated reward functions
+            starting_fen: custom FEN string for initial position
         '''
-        self._board   = Board()
+        self._starting_fen = starting_fen
+        if starting_fen:
+            self._board = Board(starting_fen)
+        else:
+            self._board = Board()
         self._rewards = rewards
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
-
         self.mov_q = deque()
-        self.pos_q = deque([Board()])
+        self.pos_q = deque([self._board.copy()])
         self.reward_hist = []
-
-
 
     def reset(self) -> Board: 
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
-        self._board.reset()
-
+        if self._starting_fen:
+            self._board = Board(self._starting_fen)
+        else:
+            self._board.reset()
         self.mov_q = deque()
-        self.pos_q = deque([Board()])
+        self.pos_q = deque([self._board.copy()])
         self.reward_hist = []
         return self._board
 

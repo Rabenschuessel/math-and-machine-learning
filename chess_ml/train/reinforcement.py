@@ -206,8 +206,10 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma, epsilon
 
 
 
-def main(model_path, experiment, batches, batch_size, gamma, lam, epsilon=0.1): 
+def main(model_path, experiment, batches, batch_size, gamma, lam, epsilon=0.1, starting_fen=None):
     env_params = {"rewards": Rewards.ALL}
+    if starting_fen:
+        env_params["starting_fen"] = starting_fen
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     log_dir    = Path("logs/rl/experiment-{}".format(experiment))
@@ -233,7 +235,6 @@ def main(model_path, experiment, batches, batch_size, gamma, lam, epsilon=0.1):
 
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="reinforcement learning", 
@@ -245,6 +246,7 @@ if __name__ == "__main__":
     parser.add_argument('--gamma', default=0.9, type=float)
     parser.add_argument('--lam', default=0.8, type=float, help='TD(lambda) parameter')
     parser.add_argument('--epsilon', default=0.1, type=float, help='Epsilon-greedy exploration parameter')
+    parser.add_argument('--starting_fen', default=None, type=str, help='Custom starting position in FEN')
     args = parser.parse_args()
 
     main(experiment=args.experiment_name,
@@ -253,7 +255,8 @@ if __name__ == "__main__":
         model_path=args.model,
         gamma=args.gamma,
         lam=args.lam,
-        epsilon=args.epsilon)
+        epsilon=args.epsilon,
+        starting_fen=args.starting_fen)
 
 
 
