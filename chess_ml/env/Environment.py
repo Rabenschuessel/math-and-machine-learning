@@ -52,8 +52,8 @@ class Environment:
         if len(self.pos_q) > 0: 
             self.pos_q.clear()
             self.mov_q.clear()
-            r = [0 if reward.__name__ != "win" 
-                   else Rewards.WIN_VALUE for reward in self._rewards]
+            # Correct: call the actual reward functions for the final state
+            r = [reward(self._board, None, self._board) for reward in self._rewards]
             self.reward_hist.append(r)
             # Debug: write final board, result, and reward to a log file
             debug_log_path = "debug_reward_log.txt"
