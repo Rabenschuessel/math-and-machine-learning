@@ -50,10 +50,17 @@ class Environment:
     def get_rewards(self): 
         # add reward for last move of the game
         if len(self.pos_q) > 0: 
+            # Use the last two positions and last move to get the correct player perspective
+            if len(self.pos_q) >= 2 and len(self.mov_q) >= 1:
+                prev_state = self.pos_q.popleft()
+                move = self.mov_q.popleft()
+                result = self._board
+                r = [reward(prev_state, move, result) for reward in self._rewards]
+            else:
+                # Fallback: use current board, but this should rarely happen
+                r = [reward(self._board, None, self._board) for reward in self._rewards]
             self.pos_q.clear()
             self.mov_q.clear()
-            # Correct: call the actual reward functions for the final state
-            r = [reward(self._board, None, self._board) for reward in self._rewards]
             self.reward_hist.append(r)
             # Debug: write final board, result, and reward to a log file
             debug_log_path = "debug_reward_log.txt"
