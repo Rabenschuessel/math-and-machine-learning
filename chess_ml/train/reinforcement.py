@@ -18,11 +18,6 @@ from chess_ml.model.ResBlock import ChessResBlock
 
 
 def log_batch(path, envs, rewards_white, rewards_black, batch_nr): 
-    # Logging reward values
-    # tqdm.write("reward order: {}".format([r.__name__ for r in envs[0]._rewards]))
-    # tqdm.write("mean white reward values: {}".format(rewards_white.abs().sum(dim=(0,1))))
-    # tqdm.write("mean black reward values: {}".format(rewards_black.abs().sum(dim=(0,1))))
-
     # Saving white rewards
     path = Path(path) / "games" / "batch-{:04d}".format(batch_nr)
     path.mkdir(parents=True, exist_ok=True)
@@ -132,7 +127,7 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma):
 
 
 def main(model_path, experiment, batches, batch_size, gamma): 
-    env_params = {"rewards": Rewards.ALL}
+    env_params = {"rewards": [Rewards.win]}
     device     = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # create a new log dir in 'logs/rl/experiment-<name>/<x>' where x starts from 0
@@ -148,7 +143,7 @@ def main(model_path, experiment, batches, batch_size, gamma):
         format='%(message)s'  
     )
 
-    model = ChessCNN()
+    model = ChessResBlock()
     if model_path is not None: 
         state = torch.load(model_path, map_location=device)
         model.load_state_dict(state)
