@@ -5,14 +5,15 @@ import chess
 
 
 def win(state: Board, move: Move, result: Board): 
-    '''returns Rewards.WIN_VALUE on white and -WIN_VALUE on loss
+    '''Returns reward from white's perspective: +1 if white wins, -1 if black wins, 0 if draw
     '''
     if (outcome := result.outcome()) is not None: 
         if outcome.winner is None: 
-            return 0.5 * WIN_VALUE
-        if outcome.winner is state.turn: 
+            return 0.0  # Draw
+        if outcome.winner is WHITE:  # White won
             return WIN_VALUE
-        return -WIN_VALUE
+        else:  # Black won
+            return -WIN_VALUE
     return 0.0
     
 

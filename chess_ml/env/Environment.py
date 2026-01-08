@@ -50,20 +50,15 @@ class Environment:
     def get_rewards(self): 
         # add reward for last move of the game
         if len(self.pos_q) > 0: 
-            # Use the last two positions and last move to get the correct player perspective (unmirrored)
+            # Call reward function with the final board state to get white's perspective reward
             if len(self.pos_q) >= 2 and len(self.mov_q) >= 1:
                 prev_state = self.pos_q.popleft()
                 move = self.mov_q.popleft()
-                # The result board is the current board, but we want the unmirrored version
-                result = self._board if self._board.turn == chess.BLACK else self._board.mirror()
+                result = self._board
                 r = [reward(prev_state, move, result) for reward in self._rewards]
-                # Convert reward to white's perspective: if black just moved, negate wins/losses (keep draws as 0)
-                if prev_state.turn == chess.BLACK:
-                    r = [-x if x != 0.5 else 0.0 for x in r]  # Keep draw (0.5) as 0, negate wins/losses
             else:
-                # Fallback: use current board, but this should rarely happen
-                result = self._board if self._board.turn == chess.BLACK else self._board.mirror()
-                r = [reward(self._board, None, result) for reward in self._rewards]
+                # Fallback
+                r = [reward(self._board, None, self._board) for reward in self._rewards]
             self.pos_q.clear()
             self.mov_q.clear()
             self.reward_hist.append(r)
