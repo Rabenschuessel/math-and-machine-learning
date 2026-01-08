@@ -55,6 +55,12 @@ class Environment:
             r = [0 if reward.__name__ != "win" 
                    else Rewards.WIN_VALUE for reward in self._rewards]
             self.reward_hist.append(r)
+            # Debug: write final board, result, and reward to a log file
+            debug_log_path = "debug_reward_log.txt"
+            with open(debug_log_path, "a") as debug_log:
+                debug_log.write(f"[DEBUG] Final board (FEN): {self._board.fen()}\n")
+                debug_log.write(f"[DEBUG] Game result: {self._board.result()}\n")
+                debug_log.write(f"[DEBUG] Assigned reward: {r}\n\n")
         # otherwise add zero rewards so that all games in batch have the same length
         else: 
             r = [0 for reward in self._rewards]
