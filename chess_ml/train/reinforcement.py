@@ -179,6 +179,7 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma, epsilon=0.1):
 
     tqdm.write("loss: {}".format(loss.item()))
     tqdm.write(str(Counter([env._board.result() for env in envs])))
+    return loss.item()
 
 
 
@@ -195,24 +196,20 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma, epsilon
         writer = csv.writer(csvfile)
         writer.writerow(["batch", "loss", "win", "draw", "loss"])
 
+
     for batch in tqdm(range(batches), desc="Batches", unit="Batches"): 
-        # Run training batch
-        train_batch(model, optim, envs, log_dir, batch, gamma, epsilon)
+        # Run training batch and get loss
+        loss = train_batch(model, optim, envs, log_dir, batch, gamma, epsilon)
 
         # After train_batch, collect loss and results for logging
-        # Find the latest batch directory and rewards
         from collections import Counter
         results = [env._board.result() for env in envs]
         win = results.count('1-0')
         draw = results.count('1/2-1/2')
         loss_count = results.count('0-1')
-        # Try to get loss from tqdm output (not ideal, but matches your current structure)
-        # If you want more accurate logging, return loss from train_batch
-        # For now, just log batch number and results
-        # You can manually add loss logging inside train_batch if needed
         with open(loss_log_path, "a", newline='') as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow([batch, "see terminal", win, draw, loss_count])
+            writer.writerow([batch, loss, win, draw, loss_count])
 
         if batch % 10 == 0: 
             tqdm.write("Save Checkpoint")
