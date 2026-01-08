@@ -74,7 +74,7 @@ def material(state: Board, move: Move, result: Board):
 
 #ALL       = [control_center, material, win]
 ALL = [win]
-WIN_VALUE = 1.0
+WIN_VALUE = 10.0
 
 
 ################################################################################
