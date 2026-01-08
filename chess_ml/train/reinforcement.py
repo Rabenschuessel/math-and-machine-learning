@@ -256,7 +256,7 @@ def main(model_path, experiment, batches, batch_size, gamma, lam, epsilon=0.1, s
         model.load_state_dict(state)
 
 
-    optim = torch.optim.Adam(model.parameters())
+    optim = torch.optim.Adam(model.parameters(), lr=0.01)
     train(model, optim, batches, batch_size, env_params, log_dir, gamma, epsilon)
 
 
