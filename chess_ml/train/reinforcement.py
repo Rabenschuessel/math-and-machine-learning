@@ -172,6 +172,14 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma, epsilon=0.1):
     # value function loss (MSE to TD(lambda) returns) - pure value-based RL
     loss = F.mse_loss(values_all, returns, reduction='mean')
 
+    # Debug: log value predictions vs returns
+    debug_log_path = "debug_value_log.txt"
+    with open(debug_log_path, "a") as debug_log:
+        debug_log.write(f"[BATCH] Values mean: {values_all.mean().item():.4f}, Returns mean: {returns.mean().item():.4f}\n")
+        debug_log.write(f"[BATCH] Values max: {values_all.max().item():.4f}, Returns max: {returns.max().item():.4f}\n")
+        debug_log.write(f"[BATCH] Values min: {values_all.min().item():.4f}, Returns min: {returns.min().item():.4f}\n")
+        debug_log.write(f"[BATCH] Loss: {loss.item():.4f}\n\n")
+
     # optimize
     optim.zero_grad()
     loss.backward()
