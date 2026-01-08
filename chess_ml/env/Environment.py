@@ -57,6 +57,9 @@ class Environment:
                 # The result board is the current board, but we want the unmirrored version
                 result = self._board if self._board.turn == chess.BLACK else self._board.mirror()
                 r = [reward(prev_state, move, result) for reward in self._rewards]
+                # Convert reward to white's perspective: if black just moved, negate wins/losses (keep draws as 0)
+                if prev_state.turn == chess.BLACK:
+                    r = [-x if x != 0.5 else 0.0 for x in r]  # Keep draw (0.5) as 0, negate wins/losses
             else:
                 # Fallback: use current board, but this should rarely happen
                 result = self._board if self._board.turn == chess.BLACK else self._board.mirror()
