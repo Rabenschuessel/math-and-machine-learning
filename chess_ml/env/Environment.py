@@ -50,23 +50,32 @@ class Environment:
     def get_rewards(self): 
         # add reward for last move of the game
         if len(self.pos_q) > 0: 
-            # Use the last two positions and last move to get the correct player perspective
+            # Use the last two positions and last move to get the correct player perspective (unmirrored)
             if len(self.pos_q) >= 2 and len(self.mov_q) >= 1:
                 prev_state = self.pos_q.popleft()
                 move = self.mov_q.popleft()
-                result = self._board
+                # The result board is the current board, but we want the unmirrored version
+                result = self._board if self._board.turn == chess.BLACK else self._board.mirror()
                 r = [reward(prev_state, move, result) for reward in self._rewards]
             else:
                 # Fallback: use current board, but this should rarely happen
-                r = [reward(self._board, None, self._board) for reward in self._rewards]
+                result = self._board if self._board.turn == chess.BLACK else self._board.mirror()
+                r = [reward(self._board, None, result) for reward in self._rewards]
             self.pos_q.clear()
             self.mov_q.clear()
             self.reward_hist.append(r)
             # Debug: write final board, result, and reward to a log file
             debug_log_path = "debug_reward_log.txt"
             with open(debug_log_path, "a") as debug_log:
-                debug_log.write(f"[DEBUG] Final board (FEN): {self._board.fen()}\n")
-                debug_log.write(f"[DEBUG] Game result: {self._board.result()}\n")
+                debug_log.write(f"[DEBUG] Game ended\n")
+                debug_log.write(f"[DEBUG] prev_state turn (who is to move): {prev_state.turn}\n")
+                debug_log.write(f"[DEBUG] prev_state FEN: {prev_state.fen()}\n")
+                debug_log.write(f"[DEBUG] Move made: {move}\n")
+                debug_log.write(f"[DEBUG] Result FEN: {result.fen()}\n")
+                debug_log.write(f"[DEBUG] Result turn (who is to move): {result.turn}\n")
+                debug_log.write(f"[DEBUG] Game result: {result.result()}\n")
+                if result.outcome():
+                    debug_log.write(f"[DEBUG] Winner: {result.outcome().winner}\n")
                 debug_log.write(f"[DEBUG] Assigned reward: {r}\n\n")
         # otherwise add zero rewards so that all games in batch have the same length
         else: 
