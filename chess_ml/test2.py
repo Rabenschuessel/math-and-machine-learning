@@ -35,3 +35,10 @@ print(torch.tensor(rewards_white))
 
 torch.tensor(rewards_white).abs().mean(dim=(0,1))
 
+
+
+rewards_white1
+rewards_black1
+
+rewards_black2
+rewards_white2

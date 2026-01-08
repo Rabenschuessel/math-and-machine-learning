@@ -10,7 +10,7 @@ def win(state: Board, move: Move, result: Board):
     '''
     if (outcome := result.outcome()) is not None: 
         if outcome.winner is None: 
-            return 0
+            return -(WIN_VALUE / 2)
         if outcome.winner is state.turn: 
             return WIN_VALUE
         return -WIN_VALUE
