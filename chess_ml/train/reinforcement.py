@@ -97,8 +97,10 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
     loss.backward()
     optim.step()
 
+    tqdm.write("Batch Summary:")
     tqdm.write("loss: {}".format(loss.item()))
-    tqdm.write(str(Counter([env._board.result() for env in envs])))
+    tqdm.write("results: {}".format(str(Counter([env._board.result() for env in envs]))))
+    tqdm.write("mean game length: {}".format(sum([len(env._board.move_stack) for env in envs])/len(envs)))
 
 
 
