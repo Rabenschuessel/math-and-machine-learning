@@ -1,3 +1,4 @@
+import textwrap
 import argparse
 import logging
 from pathlib import Path 
@@ -128,9 +129,10 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma):
 
 
 
-def main(model_path, experiment, batches, batch_size, gamma): 
-    env_params = {"rewards": [Rewards.win]}
-    device     = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+def main(*, model_path, experiment, architecture, batches, batch_size, gamma, rewards): 
+    name2reward = {r.__name__:r for r in Rewards.ALL}
+    env_params  = {"rewards": [name2reward[r] for r in rewards]}
+    device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     # create a new log dir in 'logs/rl/experiment-<name>/<x>' where x starts from 0
     log_dir     = Path("logs/rl/experiment-{}".format(experiment))
@@ -144,8 +146,21 @@ def main(model_path, experiment, batches, batch_size, gamma):
         level=logging.INFO,      
         format='%(message)s'  
     )
+    with open(log_dir / 'hparams.txt') as f:
+        f.write(textwrap.dedent(f"""model_path: {model_path}
+                architecture: {architecture}\n
+                batches: {batches}\n
+                batch_size: {batch_size}\n
+                gamma: {gamma}\n
+                rewards: {rewards}"""))
 
-    model = ChessResBlock()
+    if architecture == 'linear': 
+        model = ChessFeedForward()
+    elif architecture == 'cnn': 
+        model = ChessCNN()
+    else: 
+        model = ChessResBlock()
+
     if model_path is not None: 
         state = torch.load(model_path, map_location=device)
         model.load_state_dict(state)
@@ -167,13 +182,17 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--experiment-name', default=0)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('--gamma', default=0.9, type=float)
+    parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='cnn')
+    parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL], nargs="+")
     args = parser.parse_args()
 
     main(experiment=args.experiment_name,
          batches=args.batches,
          batch_size=args.batch_size,
          model_path=args.model,
-         gamma=args.gamma)
+         gamma=args.gamma, 
+         architecture=args.architecture, 
+         rewards=args.rewards)
 
 
 

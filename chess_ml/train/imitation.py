@@ -5,6 +5,7 @@ This module provides a training procedure for imitation learning
 '''
 
 
+import textwrap
 import argparse
 import torch
 import logging
@@ -91,7 +92,6 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
             y = ChessNN.move_to_labels(y).to(device)
             pred   = model(x)
             logits = pred.masked_fill(~m, float('-inf'))
-            # soft = torch.softmax(logits, dim=1)
 
             test_loss += loss_fn(logits, y).item()
             correct   += (logits.argmax(1) == y).type(torch.float).sum().item()
@@ -104,7 +104,7 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
 ################################################################################
 #### Main
 ################################################################################
-def main(experiment, epochs, model_path, path, test_holdout, batch_size, lr=1e-3):
+def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, architecture, lr=1e-3):
     log_dir    = Path("logs/im/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -114,6 +114,13 @@ def main(experiment, epochs, model_path, path, test_holdout, batch_size, lr=1e-3
     )
     models_dir = Path(log_dir/"models")
     models_dir.mkdir(parents=True, exist_ok=True)
+    with open(log_dir / 'hparams.txt') as f:
+        f.write(textwrap.dedent(f"""model_path: {model_path}
+                architecture: {architecture}\n
+                epochs: {epochs}\n
+                batch_size: {batch_size}\n
+                gamma: {gamma}\n
+                rewards: {rewards}"""))
 
     torch.manual_seed(0)
     np.random.seed(0)
@@ -124,9 +131,13 @@ def main(experiment, epochs, model_path, path, test_holdout, batch_size, lr=1e-3
     train_dl, val_dl, test_dl = get_dataloader(path, test_holdout, batch_size)
 
     print("Load Model")
-    # model             = ChessFeedForward([512, 512, 512])
-    # model             = ChessCNN()
-    model              = ChessResBlock()
+    if architecture == 'linear': 
+        model = ChessFeedForward()
+    elif architecture == 'cnn': 
+        model = ChessCNN()
+    else: 
+        model = ChessResBlock()
+
     if model_path is not None: 
         model.load_state_dict(torch.load(model_path))
     model             = model.to(device)
@@ -134,8 +145,10 @@ def main(experiment, epochs, model_path, path, test_holdout, batch_size, lr=1e-3
     loss_fn           = torch.nn.CrossEntropyLoss()
     min_loss          = float('inf')
 
+    print("Test Model Pre-Training:")
     test(val_dl, model, loss_fn, device)
 
+    print("Begin Training:")
     for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):
         train(train_dl, model, loss_fn, optimizer, device)
 
@@ -163,16 +176,19 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--experiment-name', default=1, type=int)
     parser.add_argument('-b', '--batch-size', default=64, type=int)
     parser.add_argument('-m', '--model', default=None)
+    parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='cnn')
     parser.add_argument('-d', '--data', default='./data/lichess_puzzle_labeled.csv')
     parser.add_argument('-t', '--test_holdout', default=0.1, type=float)
     args = parser.parse_args()
+        
 
     main(experiment=args.experiment_name,
          epochs=args.epochs,
          model_path=args.model,
          path=args.data, 
          test_holdout=args.test_holdout, 
-         batch_size=args.batch_size)
+         batch_size=args.batch_size, 
+         architecture=args.architecture)
 
 
 
