@@ -114,13 +114,11 @@ def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, arch
     )
     models_dir = Path(log_dir/"models")
     models_dir.mkdir(parents=True, exist_ok=True)
-    with open(log_dir / 'hparams.txt') as f:
+    with open(log_dir / 'hparams.txt', 'w') as f:
         f.write(textwrap.dedent(f"""model_path: {model_path}
                 architecture: {architecture}\n
                 epochs: {epochs}\n
-                batch_size: {batch_size}\n
-                gamma: {gamma}\n
-                rewards: {rewards}"""))
+                batch_size: {batch_size}"""))
 
     torch.manual_seed(0)
     np.random.seed(0)

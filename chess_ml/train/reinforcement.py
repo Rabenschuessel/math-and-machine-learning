@@ -146,7 +146,7 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
         level=logging.INFO,      
         format='%(message)s'  
     )
-    with open(log_dir / 'hparams.txt') as f:
+    with open(log_dir / 'hparams.txt', 'w') as f:
         f.write(textwrap.dedent(f"""model_path: {model_path}
                 architecture: {architecture}\n
                 batches: {batches}\n

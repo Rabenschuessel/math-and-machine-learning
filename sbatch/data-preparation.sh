@@ -9,6 +9,7 @@
 
 # setup python env
 module purge
+module load CUDA
 module load Anaconda3
 eval "$(conda shell.bash hook)"
 conda activate chess_ml
