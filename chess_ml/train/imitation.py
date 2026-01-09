@@ -104,7 +104,7 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
 ################################################################################
 #### Main
 ################################################################################
-def main(experiment, epochs, model_path, path, test_holdout, lr=1e-3):
+def main(experiment, epochs, model_path, path, test_holdout, batch_size, lr=1e-3):
     log_dir    = Path("logs/im/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -121,7 +121,7 @@ def main(experiment, epochs, model_path, path, test_holdout, lr=1e-3):
     print("training on {}".format(device))
 
     print("Load Dataset")
-    train_dl, val_dl, test_dl = get_dataloader(path, test_holdout)
+    train_dl, val_dl, test_dl = get_dataloader(path, test_holdout, batch_size)
 
     print("Load Model")
     # model             = ChessFeedForward([512, 512, 512])
@@ -159,8 +159,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="imitation learning", 
         description="transform chess puzzle dataset")
-    parser.add_argument('-e', '--epochs' , default=10, type=int)
+    parser.add_argument('-e', '--epochs' , default=20, type=int)
     parser.add_argument('-n', '--experiment-name', default=1, type=int)
+    parser.add_argument('-b', '--batch-size', default=64, type=int)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('-d', '--data', default='./data/lichess_puzzle_labeled.csv')
     parser.add_argument('-t', '--test_holdout', default=0.1, type=float)
@@ -170,7 +171,8 @@ if __name__ == "__main__":
          epochs=args.epochs,
          model_path=args.model,
          path=args.data, 
-         test_holdout=args.test_holdout)
+         test_holdout=args.test_holdout, 
+         batch_size=args.batch_size)
 
 
 
