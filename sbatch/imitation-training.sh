@@ -6,7 +6,7 @@
 #SBATCH --partition=clara
 #SBATCH --time=15:00:00
 #SBATCH --gpus=rtx2080ti:1
-#SBATCH --mem=8G
+#SBATCH --mem=16G
 
 # setup python env
 module purge
