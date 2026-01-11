@@ -155,7 +155,7 @@ def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, arch
         if loss < min_loss: 
             min_loss = loss
             tqdm.write("Save Checkpoint")
-            torch.save(model.state_dict(), models_dir / f"checkpoint-best-{epoch}.pth")
+            torch.save(model.state_dict(), models_dir / f"checkpoint-best.pth")
 
 
     tqdm.write("Test")

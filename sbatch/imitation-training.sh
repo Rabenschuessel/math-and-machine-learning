@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -o ./log/%x.out
-#SBATCH -e ./log/%x.err
+#SBATCH -o ./log/%x-%j.out
+#SBATCH -e ./log/%x-%j.err
 #SBATCH --job-name=imitation-learning
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
@@ -17,6 +17,4 @@ conda activate chess_ml
 
 
 # start imitation 
-python -m chess_ml.train.imitation "$@" \
-	--experiment-name 0 \
-	--epochs 10
+python -m chess_ml.train.imitation "$@" 

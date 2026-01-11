@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH -o ./log/%x.out
-#SBATCH -e ./log/%x.err
+#SBATCH -o ./log/%x-%j.out
+#SBATCH -e ./log/%x-%j.err
 #SBATCH --job-name=reinforcement-learning
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
