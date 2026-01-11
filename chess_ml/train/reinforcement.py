@@ -147,11 +147,12 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
         format='%(message)s'  
     )
     with open(log_dir / 'hparams.txt', 'w') as f:
-        f.write(textwrap.dedent(f"""model_path: {model_path}
-                architecture: {architecture}\n
-                batches: {batches}\n
-                batch_size: {batch_size}\n
-                gamma: {gamma}\n
+        f.write(textwrap.dedent(f"""\
+                model_path: {model_path}
+                architecture: {architecture}
+                batches: {batches}
+                batch_size: {batch_size}
+                gamma: {gamma}
                 rewards: {rewards}"""))
 
     if architecture == 'linear': 
@@ -182,7 +183,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--experiment-name', default=0)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('--gamma', default=0.9, type=float)
-    parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='cnn')
+    parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='resnet')
     parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL], nargs="+")
     args = parser.parse_args()
 

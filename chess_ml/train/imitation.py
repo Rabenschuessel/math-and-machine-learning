@@ -115,9 +115,10 @@ def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, arch
     models_dir = Path(log_dir/"models")
     models_dir.mkdir(parents=True, exist_ok=True)
     with open(log_dir / 'hparams.txt', 'w') as f:
-        f.write(textwrap.dedent(f"""model_path: {model_path}
-                architecture: {architecture}\n
-                epochs: {epochs}\n
+        f.write(textwrap.dedent(f"""\
+                model_path: {model_path}
+                architecture: {architecture}
+                epochs: {epochs}
                 batch_size: {batch_size}"""))
 
     torch.manual_seed(0)
@@ -174,7 +175,7 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--experiment-name', default=1, type=int)
     parser.add_argument('-b', '--batch-size', default=64, type=int)
     parser.add_argument('-m', '--model', default=None)
-    parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='cnn')
+    parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='resnet')
     parser.add_argument('-d', '--data', default='./data/lichess_puzzle_labeled.csv')
     parser.add_argument('-t', '--test_holdout', default=0.1, type=float)
     args = parser.parse_args()
