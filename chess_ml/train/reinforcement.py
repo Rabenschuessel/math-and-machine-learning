@@ -142,7 +142,6 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
     log_dir     = (log_dir / "{:03d}".format(new))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
-        filename=log_dir / 'log.log',
         level=logging.INFO,      
         format='%(message)s'  
     )
@@ -155,6 +154,7 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
                 gamma: {gamma}
                 rewards: {rewards}"""))
 
+    logging.info('loading model architecture')
     if architecture == 'linear': 
         model = ChessFeedForward()
     elif architecture == 'cnn': 
@@ -163,11 +163,14 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
         model = ChessResBlock()
 
     if model_path is not None: 
+        logging.info('loading model weights')
         state = torch.load(model_path, map_location=device)
         model.load_state_dict(state)
 
 
+    logging.info('creating optimizer')
     optim = torch.optim.Adam(model.parameters())
+    logging.info('train model')
     train(model, optim, batches, batch_size, env_params, log_dir, gamma)
 
 
@@ -179,7 +182,7 @@ if __name__ == "__main__":
         prog="reinforcement learning", 
         description="transform chess puzzle dataset")
     parser.add_argument('-b', '--batches' , default=1000, type=int)
-    parser.add_argument('-g', '--batch_size' , default=32, type=int)
+    parser.add_argument('-g', '--batch_size' , default=16, type=int)
     parser.add_argument('-n', '--experiment-name', default=0)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('--gamma', default=0.9, type=float)
