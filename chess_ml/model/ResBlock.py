@@ -5,7 +5,7 @@ from typing import List
 
 
 class ChessResBlock(ChessNN): 
-    def __init__(self, num_blocks=10, conv_block=64):
+    def __init__(self, num_blocks=20, conv_block=64):
         '''Residual block implementation of ChessNN.
         '''
         super().__init__()
