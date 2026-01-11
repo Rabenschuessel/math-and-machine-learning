@@ -105,7 +105,7 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
 #### Main
 ################################################################################
 def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, architecture, lr=1e-3):
-    log_dir    = Path("logs/im/experiment-{}".format(experiment))
+    log_dir    = Path("logs/im/{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         filename=log_dir / 'log.log',
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         prog="imitation learning", 
         description="transform chess puzzle dataset")
     parser.add_argument('-e', '--epochs' , default=20, type=int)
-    parser.add_argument('-n', '--experiment-name', default=1, type=int)
+    parser.add_argument('-n', '--experiment-name', default=0)
     parser.add_argument('-b', '--batch-size', default=64, type=int)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='resnet')

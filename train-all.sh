@@ -5,7 +5,7 @@ imitation_jib=$(sbatch --parsable sbatch/imitation-training.sh \
 	-n puzzles \
 	-a resnet)
 sbatch --dependency=afterok:$imitation_jib sbatch/reinforcement-training.sh \
-	-m logs/im/experiment-puzzles/models/checkpoint-best.pth \
+	-m logs/im/puzzles/models/checkpoint-best.pth \
 	-n resnet-pretrained-win \
 	-a resnet \
 	-r win
