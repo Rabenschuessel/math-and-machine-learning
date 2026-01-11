@@ -2,7 +2,7 @@
 
 # reinforcement model pretrained on puzzles
 imitation_jib=$(sbatch --parsable sbatch/imitation-training.sh \
-	-n puzzles \ 
+	-n puzzles \
 	-a resnet)
 sbatch --dependency=afterok:$imitation_jib sbatch/reinforcement-training.sh \
 	-m logs/im/experiment-puzzles/models/checkpoint-best.pth \
@@ -12,6 +12,6 @@ sbatch --dependency=afterok:$imitation_jib sbatch/reinforcement-training.sh \
 
 # reinforcement learning with newly initialized model
 sbatch sbatch/reinforcement-training.sh \
-	-n resnet-untrained-win \ 
-	-a resnet \ 
+	-n resnet-untrained-win \
+	-a resnet \
 	-r win
