@@ -17,20 +17,20 @@ imitation20_jib=$(sbatch --dependency=afterok:$imitation10_jib --parsable sbatch
 # use model after 10 epochs
 sbatch --dependency=afterok:$imitation10_jib sbatch/reinforcement-training.sh \
 	-m logs/im/$architecture-10-epochs/models/checkpoint-best.pth \
-	-n $architecture-pretrained-$reward \
+	-n $architecture-pretrained-$rewards \
 	-a $architecture \
 	-r win
 
 # use model after 20 epochs
 sbatch --dependency=afterok:$imitation20_jib sbatch/reinforcement-training.sh \
 	-m logs/im/$architecture-20-epochs/models/checkpoint-best.pth \
-	-n $architecture-pretrained-$reward \
+	-n $architecture-pretrained-$rewards \
 	-a $architecture \
 	-r win
 
 
 # reinforcement learning with newly initialized model
 sbatch sbatch/reinforcement-training.sh \
-	-n $architecture-untrained-$reward \
+	-n $architecture-untrained-$rewards \
 	-a $architecture \
-	-r $reward
+	-r $rewards
