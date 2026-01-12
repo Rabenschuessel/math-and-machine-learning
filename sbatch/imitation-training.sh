@@ -4,7 +4,7 @@
 #SBATCH --job-name=imitation-learning
 #SBATCH --ntasks=1
 #SBATCH --partition=clara
-#SBATCH --time=15:00:00
+#SBATCH --time=30:00:00
 #SBATCH --gpus=rtx2080ti:1
 #SBATCH --mem=32G
 
