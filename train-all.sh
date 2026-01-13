@@ -9,6 +9,7 @@ imitation10_jib=$(sbatch --parsable sbatch/imitation-training.sh \
 	-e 10 \
 	-a $architecture)
 imitation20_jib=$(sbatch --dependency=afterok:$imitation10_jib --parsable sbatch/imitation-training.sh \
+	-m logs/im/$architecture-10-epochs/models/checkpoint-best.pth \
 	-n $architecture-20-epochs \
 	-e 10 \
 	-a $architecture)
