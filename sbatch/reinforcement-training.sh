@@ -15,7 +15,10 @@ module load CUDA
 eval "$(conda shell.bash hook)"
 conda activate chess_ml
 
+# disable OpenMP affinity to avoid crashes
+export KMP_AFFINITY=disabled
+export OMP_NUM_THREADS=1
 
-# start immitation 
+# start reinforcement learning
 python -m chess_ml.train.reinforcement "$@" 
 
