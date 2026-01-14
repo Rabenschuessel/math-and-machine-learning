@@ -77,26 +77,44 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
     # transform to torch tensors
     rewards_white, rewards_black = zip(*[env.get_rewards() for env in envs])
     rewards_white   = torch.tensor(rewards_white)
-    log_probs_white = torch.stack(log_probs_white)
-    done_white      = torch.stack(done_white)
     rewards_black   = torch.tensor(rewards_black)
-    log_probs_black = torch.stack(log_probs_black)
-    done_black      = torch.stack(done_black)
+    
+    # Handle cases where one side doesn't have any moves (game ends too quickly)
+    if len(log_probs_white) > 0:
+        log_probs_white = torch.stack(log_probs_white)
+        done_white      = torch.stack(done_white)
+    else:
+        log_probs_white = torch.tensor([])
+        done_white      = torch.tensor([])
+    
+    if len(log_probs_black) > 0:
+        log_probs_black = torch.stack(log_probs_black)
+        done_black      = torch.stack(done_black)
+    else:
+        log_probs_black = torch.tensor([])
+        done_black      = torch.tensor([])
 
     log_batch(log_dir, envs, rewards_white, rewards_black, batch_nr)
 
     # compute loss
     rewards_white = rewards_white.sum(dim=-1).permute(1, 0)
     rewards_black = rewards_black.sum(dim=-1).permute(1, 0)
-    rewards_white = reward2go(rewards_white, done_white, gamma)
-    rewards_black = reward2go(rewards_black, done_black, gamma)
-    loss_white    = (- rewards_white * log_probs_white).sum()
-    loss_black    = (- rewards_black * log_probs_black).sum()
-    loss          = loss_white + loss_black
+    
+    loss = 0
+    if len(log_probs_white) > 0:
+        rewards_white = reward2go(rewards_white, done_white, gamma)
+        loss_white    = (- rewards_white * log_probs_white).sum()
+        loss += loss_white
+    
+    if len(log_probs_black) > 0:
+        rewards_black = reward2go(rewards_black, done_black, gamma)
+        loss_black    = (- rewards_black * log_probs_black).sum()
+        loss += loss_black
 
     # optimize
     optim.zero_grad()
-    loss.backward()
+    if loss != 0:
+        loss.backward()
     optim.step()
 
     tqdm.write("Batch Summary:")
