@@ -137,7 +137,7 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
     # create a new log dir in 'logs/rl/experiment-<name>/<x>' where x starts from 0
     log_dir     = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
-    experiments = sorted([int(x.name) for x in log_dir.iterdir() if x.is_dir()])
+    experiments = sorted([int(x.name) for x in log_dir.iterdir() if x.is_dir() and x.name.isdigit()])
     new         = 0 if len(experiments) == 0 else (int(experiments[-1]) + 1)
     log_dir     = (log_dir / "{:03d}".format(new))
     log_dir.mkdir(parents=True, exist_ok=True)
