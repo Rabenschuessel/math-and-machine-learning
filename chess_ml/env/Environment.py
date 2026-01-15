@@ -6,22 +6,19 @@ from collections import deque, deque
 from chess import Board, Move 
 from typing import Tuple
 import chess_ml.env.Rewards as Rewards
-from chess_ml.env.PositionSampler import PositionSampler, StandardPositionSampler
 
 
 class Environment: 
-    def __init__(self, rewards=[], position_sampler=None):
+    def __init__(self, rewards=[]):
         '''
         Environment acts as wrapper around `chess.Board` for reinforcement learning. 
         It has a state and returns a reward after each step. 
 
         Parameters: 
             rewards: set of activated reward functions
-            position_sampler: PositionSampler instance for loading starting positions (default: standard position)
         '''
         self._board   = Board()
         self._rewards = rewards
-        self.position_sampler = position_sampler if position_sampler is not None else StandardPositionSampler()
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
 
@@ -34,14 +31,10 @@ class Environment:
     def reset(self) -> Board: 
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
-        
-        # Load starting position from sampler
-        fen = self.position_sampler.sample()
-        self._board.set_fen(fen)
+        self._board.reset()
 
         self.mov_q = deque()
-        # Initialize pos_q with the starting board, not an empty one
-        self.pos_q = deque([self._board.copy()])
+        self.pos_q = deque([Board()])
         self.reward_hist = []
         return self._board
 
