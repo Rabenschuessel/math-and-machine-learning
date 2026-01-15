@@ -57,8 +57,9 @@ def transform_position(row: pd.Series):
 
 
 def main():  
+    max_positions = 6000000
     input  = "./data/lichess_puzzle_transformed.csv"
-    output = "./data/lichess_transformed.csv"
+    output = "./data/lichess_puzzle_labeled.csv"
     parser = argparse.ArgumentParser(
         prog="puzzle-transform", 
         description="transform chess puzzle dataset")
@@ -68,7 +69,6 @@ def main():
 
     tqdm.tqdm.pandas()
     df1 = pd.read_csv(args.input)
-    # df1 = df1.head(5000)
 
     # filter out all that contain non queen promotions
     df1 = df1[~df1["Themes"].str.contains("underPromotion")]
@@ -80,6 +80,7 @@ def main():
 
     df1 = df1.progress_apply(transform_position, axis=1)
     df1 = df1.explode(["FEN", "Moves"])
+    df1 = df1.head(max_positions)
     df1.to_csv(args.output)
 
 

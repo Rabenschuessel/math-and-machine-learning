@@ -1,21 +1,44 @@
-import xarray as xr
-import matplotlib.pyplot as plt
-
-
-
-ds = xr.open_dataset("logs/rl/experiment-0/001/games/batch-0000/rewards.nc")
-
-
-
-(ds.win != 0).sum(dim='turn').sel(color=False)
-
-ds.win.sel(color=False, game=0).values
-
-
-ds['win'].sum(dim=("turn", 'game', 'color'))
+import chess.pgn 
+from io import StringIO
+import pandas as pd
 
 
 
 
 
+df = pd.read_csv('./data/GM_games_dataset.csv', nrows=100)
 
+def transform_gm_games(df, max_positions): 
+    def mirror_move(move: chess.Move): 
+        def mirror_square(sq: chess.Square): 
+            return chess.square(chess.square_file(sq), 7 - chess.square_rank(sq))
+
+        return chess.Move(
+                mirror_square(move.from_square),
+                mirror_square(move.to_square)
+        )
+    positions = []
+    moves     = []
+    # iterate games
+    for i, row in df.iterrows(): 
+        game = chess.pgn.read_game(StringIO(row.pgn.splitlines()[-1]))
+        board = game.board()
+        # iterate moves in a game
+        for move in game.mainline_moves(): 
+            if board.turn == chess.BLACK: 
+                positions.append(board.mirror().fen())
+                moves.append(mirror_move(move).uci())
+            else: 
+                positions.append(board.fen())
+                moves.append(move.uci())
+            board.push(move)
+
+        # stop when max reached
+        if len(positions) > max_positions: 
+            break
+
+    # create new dataframe
+    out = pd.DataFrame()
+    out['position'] = positions
+    out['moves']    = moves
+    return out
