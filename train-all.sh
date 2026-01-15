@@ -20,14 +20,16 @@ fi
 
 
 # use model after 10 epochs
-sbatch --dependency=afterok:$imitation10_jib sbatch/reinforcement-training.sh \
+sbatch ${imitation10_jib:+--dependency=afterok:$imitation10_jib} \
+	sbatch/reinforcement-training.sh \
 	-m logs/im/$architecture-10-epochs/models/checkpoint-best.pth \
 	-n $architecture-pretrained-10-$rewards_name \
 	-a $architecture \
 	-r $rewards
 
 # use model after 20 epochs
-sbatch --dependency=afterok:$imitation20_jib sbatch/reinforcement-training.sh \
+sbatch ${imitation20_jib:+--dependency=afterok:$imitation20_jib} \
+	sbatch/reinforcement-training.sh \
 	-m logs/im/$architecture-20-epochs/models/checkpoint-best.pth \
 	-n $architecture-pretrained-20-$rewards_name \
 	-a $architecture \
