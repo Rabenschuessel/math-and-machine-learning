@@ -190,6 +190,7 @@ if __name__ == "__main__":
     parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL], nargs="+")
     args = parser.parse_args()
 
+    print(args.rewards)
     main(experiment=args.experiment_name,
          batches=args.batches,
          batch_size=args.batch_size,
