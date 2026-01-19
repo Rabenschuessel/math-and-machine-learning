@@ -19,7 +19,9 @@ from chess_ml.env import Rewards
 from chess_ml.env.PositionSampler import get_position_sampler
 from chess_ml.env.Environment import Environment
 from chess_ml.model.Convolution import ChessCNN
-from chess_ml.logging import setup_logging, CSVLogger, summarize_batch_stats, init_csv_logger
+from chess_ml.model.ResBlock import ChessResBlock
+from chess_ml.model.FeedForward import ChessFeedForward
+from chess_ml.logging import setup_logging, CSVLogger, summarize_batch_stats, init_csv_logger, save_rewards_and_games
 
 
 def train_batch(model,
@@ -29,9 +31,7 @@ def train_batch(model,
                 batch_nr: int,
                 gamma: float,
                 csv_logger: CSVLogger,
-                logger: logging.Logger,
-                save_artifacts_every: int = 10,
-                normalize_advantage: bool = True):
+                save_artifacts_every: int = 0):
 
     """Run one batch of self-play games, compute policy gradient loss, optimize model,
     and log metrics and artifacts.
@@ -66,6 +66,7 @@ def train_batch(model,
     rewards_white, rewards_black = zip(*[env.get_rewards() for env in envs])
     rewards_white   = torch.tensor(rewards_white)
     rewards_black   = torch.tensor(rewards_black)
+    stats = summarize_batch_stats(envs, rewards_white, rewards_black)
 
     # compute loss
     loss = 0
@@ -76,7 +77,6 @@ def train_batch(model,
         rewards_white   = reward2go(rewards_white, done_white, gamma)
         loss_white      = (- rewards_white * log_probs_white).sum()
         loss += loss_white
-    
     if len(log_probs_black) > 0:
         log_probs_black = torch.stack(log_probs_black)
         done_black      = torch.stack(done_black)
@@ -85,9 +85,6 @@ def train_batch(model,
         loss_black      = (- rewards_black * log_probs_black).sum()
         loss += loss_black
 
-    stats = summarize_batch_stats(envs, rewards_white, rewards_black)
-    rewards_white_scalar = rewards_white.sum(dim=-1).permute(1, 0)
-    rewards_black_scalar = rewards_black.sum(dim=-1).permute(1, 0)
 
     optim.zero_grad()
     if loss != 0:
@@ -121,10 +118,10 @@ def train_batch(model,
         f"len={stats['mean_len']:.1f} | "
         f"1-0={stats['w_wins']} 0-1={stats['b_wins']} 1/2-1/2={stats['draws']}")
 
-    logger.info(
+    logging.info(
         f"batch={batch_nr} loss={loss.item():.6f} loss_w={loss_white.item():.6f} loss_b={loss_black.item():.6f} "
         f"mean_len={stats['mean_len']:.2f} w_wins={stats['w_wins']} b_wins={stats['b_wins']} draws={stats['draws']} "
-        f"return_w_mean={returns_white.mean().item():.6f} return_b_mean={returns_black.mean().item():.6f}"
+        # f"return_w_mean={returns_white.mean().item():.6f} return_b_mean={returns_black.mean().item():.6f}"
     )
 
     csv_logger.log(row)
@@ -133,14 +130,14 @@ def train_batch(model,
         save_rewards_and_games(log_dir, envs, rewards_white, rewards_black, batch_nr)
 
 
-def train(model, optim, batches, batch_size, env_params, log_dir, gamma): 
+def train(model, optim, batches, batch_size, env_params, log_dir, csv_logger, gamma): 
     models_dir = Path(log_dir/"models")
     models_dir.mkdir(parents=True, exist_ok=True)
 
     envs = [Environment(**env_params) for i in range(batch_size)]
 
     for batch in tqdm(range(batches), desc="Batches", unit="Batches"): 
-        train_batch(model, optim, envs, log_dir, batch, gamma)
+        train_batch(model, optim, envs, log_dir, batch, gamma, csv_logger)
 
         if batch % 10 == 0: 
             tqdm.write("Save Checkpoint")
@@ -169,7 +166,6 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
         position_sampler = get_position_sampler(position_type, file_path=positions_file)
     else:
         position_sampler = get_position_sampler(position_type)
-    
     env_params["position_sampler"] = position_sampler
 
     # create a new log dir in 'logs/rl/experiment-<name>/<x>' where x starts from 0
@@ -193,6 +189,7 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
                 rewards: {rewards}
                 position_type: {position_type}
                 positions_file: {positions_file}"""))
+    csv_logger = init_csv_logger(log_dir, env_params['rewards'])
 
     logging.info('loading model architecture')
     if architecture == 'linear': 
@@ -207,104 +204,11 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
         state = torch.load(model_path, map_location=device)
         model.load_state_dict(state)
 
-
-
-def train(model,
-            optim,
-            experiment: int,
-            batches: int,
-            batch_size: int,
-            rewards: list,
-            log_dir: Path,
-            models_dir: Path,
-            gamma: float,
-            save_checkpoint_every: int = 10,
-            save_artifacts_every: int = 10,
-            normalize_advantage: bool = True):
-    """
-    Train the model using self-play and policy gradient updates.
-    """
-    checkpoints_dir = log_dir / "models"
-    checkpoints_dir.mkdir(parents=True, exist_ok=True)
-
-    env_params = {"rewards": rewards}
-    envs = [Environment(**env_params) for _ in range(batch_size)]
-    logger = logging.getLogger("chess_rl")
-    csv_logger = init_csv_logger(log_dir, rewards)
-
-    for batch in tqdm(range(batches), desc="Batches", unit="Batches"):
-        train_batch(
-            model=model,
-            optim=optim,
-            envs=envs,
-            log_dir=log_dir,
-            batch_nr=batch,
-            gamma=gamma,
-            csv_logger=csv_logger,
-            logger=logger,
-            save_artifacts_every=save_artifacts_every,
-            normalize_advantage=normalize_advantage,
-        )
-
-        if save_checkpoint_every > 0 and (batch % save_checkpoint_every == 0):
-            torch.save(model.state_dict(), checkpoints_dir / f"checkpoint-{batch}.pth")
-            tqdm.write("Saved checkpoint")
-
-    games_root = log_dir / "games"
-    if games_root.exists():
-        ds = [
-            xr.open_dataset(entry / "rewards.nc")
-            for entry in games_root.iterdir()
-            if entry.is_dir() and "batch" in entry.name and (entry / "rewards.nc").exists()
-        ]
-        if len(ds) > 0:
-            ds = xr.concat(ds, dim="batch", join="outer")
-            ds = ds.assign_coords(batch=range(ds.sizes["batch"]))
-            ds.to_netcdf(log_dir / "rewards.nc")
-    
-    torch.save(model.state_dict(), models_dir / f"trained-{experiment}.pth")
-    tqdm.write("Saved final model")
-
-
-def main(model_path, experiment, batches, batch_size, rewards_name, gamma):
-    """
-    Entry point: create environment(s), model, optimizer, and start training.
-    """
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    rewards = getattr(Rewards, rewards_name.upper(), Rewards.ALL)
-
-    log_dir = Path(f"logs/rl/experiment-{experiment}")
-    logger = setup_logging(log_dir)
-
-    models_dir = Path("models")
-    models_dir.mkdir(parents=True, exist_ok=True)
-
-    model = ChessCNN().to(device)
-    if model_path is not None:
-        state = torch.load(models_dir / model_path, map_location=device)
-        model.load_state_dict(state)
-        logger.info(f"Loaded model checkpoint: {model_path}")
-
-    logging.info('creating optimizer')
+    logging.info("Train model")
     optim = torch.optim.Adam(model.parameters())
+    train(model, optim, batches, batch_size, env_params, log_dir, csv_logger, gamma)
 
-    logging.info('train model')
 
-    train(
-        model=model,
-        optim=optim,
-        experiment=experiment,
-        batches=batches,
-        batch_size=batch_size,
-        rewards=rewards,
-        log_dir=log_dir,
-        models_dir=models_dir,
-        gamma=gamma,
-        save_checkpoint_every=10,
-        save_artifacts_every=10,
-        normalize_advantage=True,
-    )
-    tqdm.write("DONE")
 
 
 if __name__ == "__main__":
@@ -318,8 +222,9 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--batch_size' , default=16, type=int)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('-n', '--experiment-name', default=0)
-    parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL], nargs="+")
+    parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL], nargs="+", default=[])
     parser.add_argument('--positions-file', default=None, help='Path to file containing FEN positions (required for --position-type file)')
+    parser.add_argument('--position-type', default='standard')
     args = parser.parse_args()
 
     main(experiment=args.experiment_name,
@@ -333,6 +238,9 @@ if __name__ == "__main__":
          positions_file=args.positions_file)
 
 
+
+# rewards_white_scalar = rewards_white.sum(dim=-1).permute(1, 0)
+# rewards_black_scalar = rewards_black.sum(dim=-1).permute(1, 0)
 # if rewards_white_scalar.shape != log_probs_white.shape or rewards_white_scalar.shape != done_white.shape:
 #     raise RuntimeError(
 #         "Shape mismatch for WHITE. This usually indicates reward/logprob timeline misalignment.\n"
