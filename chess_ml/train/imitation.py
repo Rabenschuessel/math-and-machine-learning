@@ -16,7 +16,7 @@ from torch import device
 from tqdm import tqdm 
 from typing import Union
 
-from chess_ml.data import PuzzleDataset
+from chess_ml.data import MergedDataset, PositionDataset
 from chess_ml.model import ChessNN
 from chess_ml.model.Convolution import ChessCNN
 from chess_ml.model.FeedForward import ChessFeedForward
@@ -25,8 +25,9 @@ from chess_ml.model.ResBlock import ChessResBlock
 ################################################################################
 #### Dataset
 ################################################################################
-def get_dataloader(path, test=0.0, batch_size=256): 
-    dataset         = PuzzleDataset(path=path)
+def get_dataloader(paths, test=0.0, batch_size=256): 
+    # dataset         = MergedDataset(*[PositionDataset(path=path) for path in paths])
+    dataset         = PositionDataset(path=paths)
     size            = int(len(dataset) * (1 - test))
     train_size      = int(0.9 * size)
     val_size       = size - train_size
@@ -104,7 +105,7 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
 ################################################################################
 #### Main
 ################################################################################
-def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, architecture, lr=1e-3):
+def main(*, experiment, epochs, model_path, data_paths, test_holdout, batch_size, architecture, lr=1e-3):
     log_dir    = Path("logs/im/{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -127,7 +128,7 @@ def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, arch
     print("training on {}".format(device))
 
     print("Load Dataset")
-    train_dl, val_dl, test_dl = get_dataloader(path, test_holdout, batch_size)
+    train_dl, val_dl, test_dl = get_dataloader(data_paths, test_holdout, batch_size)
 
     print("Load Model")
     if architecture == 'linear': 
@@ -170,7 +171,7 @@ def main(*, experiment, epochs, model_path, path, test_holdout, batch_size, arch
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         prog="imitation learning", 
-        description="transform chess puzzle dataset")
+        description="train with imitation learning")
     parser.add_argument('-e', '--epochs' , default=20, type=int)
     parser.add_argument('-n', '--experiment-name', default=0)
     parser.add_argument('-b', '--batch-size', default=64, type=int)
@@ -184,7 +185,7 @@ if __name__ == "__main__":
     main(experiment=args.experiment_name,
          epochs=args.epochs,
          model_path=args.model,
-         path=args.data, 
+         data_paths=args.data, 
          test_holdout=args.test_holdout, 
          batch_size=args.batch_size, 
          architecture=args.architecture)

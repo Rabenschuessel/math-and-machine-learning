@@ -2,7 +2,7 @@
 
 ## Goal 
 
-We want to investigate whether imitation learning can reduce the need for rewards shaping. 
+We want to investigate whether imitation learning can reduce the need for rewards shaping, even when the data is heavily biased. 
 Specifically when data for imitation learning is heavily biased and only covers a subset of the desired agent behavior. 
 
 
@@ -26,8 +26,11 @@ We chose chess as environment, as widely available data in form of chess puzzles
 
 
 - grand master games
-    grand master games on the other hand contain a mix of tactics. 
-    They contain positions with no tactical motive
+    Grand master games on the other hand contain a mix of tactics and strategic positions. 
+    While this reduces the biases, grand master games are not completely without bias. 
+    Checkmates are underrepresented in grandmaster games, as they often resign moves ahead, where it is obvious to them that the position is lost. 
+    
+    
 
 
 ## Prior Works 
