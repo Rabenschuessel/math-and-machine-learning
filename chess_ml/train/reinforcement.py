@@ -4,6 +4,7 @@ import logging
 from pathlib import Path 
 from chess_ml.env import Rewards
 from  chess_ml.env.Environment import Environment
+from chess_ml.env.PositionSampler import get_position_sampler
 from tqdm import tqdm
 import torch 
 import chess
@@ -76,26 +77,31 @@ def train_batch(model, optim, envs, log_dir, batch_nr, gamma):
     # transform to torch tensors
     rewards_white, rewards_black = zip(*[env.get_rewards() for env in envs])
     rewards_white   = torch.tensor(rewards_white)
-    log_probs_white = torch.stack(log_probs_white)
-    done_white      = torch.stack(done_white)
     rewards_black   = torch.tensor(rewards_black)
-    log_probs_black = torch.stack(log_probs_black)
-    done_black      = torch.stack(done_black)
-
     log_batch(log_dir, envs, rewards_white, rewards_black, batch_nr)
 
     # compute loss
-    rewards_white = rewards_white.sum(dim=-1).permute(1, 0)
-    rewards_black = rewards_black.sum(dim=-1).permute(1, 0)
-    rewards_white = reward2go(rewards_white, done_white, gamma)
-    rewards_black = reward2go(rewards_black, done_black, gamma)
-    loss_white    = (- rewards_white * log_probs_white).sum()
-    loss_black    = (- rewards_black * log_probs_black).sum()
-    loss          = loss_white + loss_black
+    loss = 0
+    if len(log_probs_white) > 0:
+        log_probs_white = torch.stack(log_probs_white)
+        done_white      = torch.stack(done_white)
+        rewards_white   = rewards_white.sum(dim=-1).permute(1, 0)
+        rewards_white   = reward2go(rewards_white, done_white, gamma)
+        loss_white      = (- rewards_white * log_probs_white).sum()
+        loss += loss_white
+    
+    if len(log_probs_black) > 0:
+        log_probs_black = torch.stack(log_probs_black)
+        done_black      = torch.stack(done_black)
+        rewards_black   = rewards_black.sum(dim=-1).permute(1, 0)
+        rewards_black   = reward2go(rewards_black, done_black, gamma)
+        loss_black      = (- rewards_black * log_probs_black).sum()
+        loss += loss_black
 
     # optimize
     optim.zero_grad()
-    loss.backward()
+    if loss != 0:
+        loss.backward()
     optim.step()
 
     tqdm.write("Batch Summary:")
@@ -129,15 +135,25 @@ def train(model, optim, batches, batch_size, env_params, log_dir, gamma):
 
 
 
-def main(*, model_path, experiment, architecture, batches, batch_size, gamma, rewards): 
+def main(*, model_path, experiment, architecture, batches, batch_size, gamma, rewards, position_type='standard', positions_file=None): 
     name2reward = {r.__name__:r for r in Rewards.ALL}
     env_params  = {"rewards": [name2reward[r] for r in rewards]}
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+    # Create position sampler
+    if position_type == 'file':
+        if positions_file is None:
+            raise ValueError("--positions-file must be specified when using --position-type file")
+        position_sampler = get_position_sampler(position_type, file_path=positions_file)
+    else:
+        position_sampler = get_position_sampler(position_type)
+    
+    env_params["position_sampler"] = position_sampler
+
     # create a new log dir in 'logs/rl/experiment-<name>/<x>' where x starts from 0
     log_dir     = Path("logs/rl/experiment-{}".format(experiment))
     log_dir.mkdir(parents=True, exist_ok=True)
-    experiments = sorted([int(x.name) for x in log_dir.iterdir() if x.is_dir()])
+    experiments = sorted([int(x.name) for x in log_dir.iterdir() if x.is_dir() and x.name.isdigit()])
     new         = 0 if len(experiments) == 0 else (int(experiments[-1]) + 1)
     log_dir     = (log_dir / "{:03d}".format(new))
     log_dir.mkdir(parents=True, exist_ok=True)
@@ -152,7 +168,9 @@ def main(*, model_path, experiment, architecture, batches, batch_size, gamma, re
                 batches: {batches}
                 batch_size: {batch_size}
                 gamma: {gamma}
-                rewards: {rewards}"""))
+                rewards: {rewards}
+                position_type: {position_type}
+                positions_file: {positions_file}"""))
 
     logging.info('loading model architecture')
     if architecture == 'linear': 
@@ -188,6 +206,10 @@ if __name__ == "__main__":
     parser.add_argument('--gamma', default=0.9, type=float)
     parser.add_argument('-a', '--architecture', choices=['linear', 'cnn', 'resnet'], default='resnet')
     parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL], nargs="+")
+    parser.add_argument('--position-type', choices=['standard', 'endgame', 'file'], default='standard',
+                        help='Type of starting positions to use for games')
+    parser.add_argument('--positions-file', default=None,
+                        help='Path to file containing FEN positions (required for --position-type file)')
     args = parser.parse_args()
 
     main(experiment=args.experiment_name,
@@ -196,7 +218,9 @@ if __name__ == "__main__":
          model_path=args.model,
          gamma=args.gamma, 
          architecture=args.architecture, 
-         rewards=args.rewards)
+         rewards=args.rewards,
+         position_type=args.position_type,
+         positions_file=args.positions_file)
 
 
 
