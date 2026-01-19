@@ -7,6 +7,7 @@ import chess
 
 # win(...)
 WIN_VALUE = 3.0
+DRAW_VALUE = -0.3
 
 # give_check(...)
 CHECK_REWARD = 0.05
@@ -49,6 +50,10 @@ INNER_CENTER_SCALE   = 100.0
 MAX_PLY_OUTER_CENTER = 20
 OUTER_CENTER_SCALE  = 150.0
 
+# step_penalty(...)
+MIN_MOVE_STACK = 20
+STEP_PENALTY = -0.001
+
 ### END ###
 
 def win(state: Board, move: Move, result: Board):
@@ -69,7 +74,7 @@ def win(state: Board, move: Move, result: Board):
 
     # Draw → neutral outcome
     if outcome.winner is None:
-        return 0.0
+        return DRAW_VALUE
 
     # If the player who was to move in `state` wins
     if outcome.winner == state.turn:
@@ -437,6 +442,13 @@ def control_outer_center(state: Board, move: Move, result: Board):
         max_ply=MAX_PLY_OUTER_CENTER, # ~10 moves per side
         scale=OUTER_CENTER_SCALE # weaker shaping
     )
+
+def step_penalty(state, move, result):
+    if result.outcome() is not None:
+        return 0.0
+    if len(state.move_stack) < MIN_MOVE_STACK:
+        return 0.0
+    return STEP_PENALTY
 
 ### REWARD LISTS ###
 ALL = [control_outer_center, control_center, castling, promoting, blunder_prevention, material, king_safety, give_check, win]

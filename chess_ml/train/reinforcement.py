@@ -274,7 +274,7 @@ def train(
     experiment: int,
     batches: int,
     batch_size: int,
-    env_params: dict,
+    rewards: list,
     log_dir: Path,
     models_dir: Path,
     gamma: float,
@@ -288,9 +288,10 @@ def train(
     checkpoints_dir = log_dir / "models"
     checkpoints_dir.mkdir(parents=True, exist_ok=True)
 
+    env_params = {"rewards": rewards}
     envs = [Environment(**env_params) for _ in range(batch_size)]
     logger = logging.getLogger("chess_rl")
-    csv_logger = init_csv_logger(log_dir, Rewards.ALL)
+    csv_logger = init_csv_logger(log_dir, rewards)
 
     for batch in tqdm(range(batches), desc="Batches", unit="Batches"):
         train_batch(
@@ -326,12 +327,12 @@ def train(
     tqdm.write("Saved final model")
 
 
-def main(model_path, experiment, batches, batch_size, gamma):
+def main(model_path, experiment, batches, batch_size, rewards_name, gamma):
     """
     Entry point: create environment(s), model, optimizer, and start training.
     """
-    env_params = {"rewards": Rewards.ALL}
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    rewards = getattr(Rewards, rewards_name.upper(), Rewards.ALL)
 
     log_dir = Path(f"logs/rl/experiment-{experiment}")
     logger = setup_logging(log_dir)
@@ -353,7 +354,7 @@ def main(model_path, experiment, batches, batch_size, gamma):
         experiment=experiment,
         batches=batches,
         batch_size=batch_size,
-        env_params=env_params,
+        rewards=rewards,
         log_dir=log_dir,
         models_dir=models_dir,
         gamma=gamma,
@@ -374,6 +375,7 @@ if __name__ == "__main__":
     parser.add_argument("-g", "--batch_size", default=32, type=int)
     parser.add_argument("-n", "--experiment-name", default=0)
     parser.add_argument("-m", "--model", default=None)
+    parser.add_argument("-r", "--rewards", default="ALL", type=str)
     parser.add_argument("--gamma", default=0.997, type=float)
 
     args = parser.parse_args()
@@ -383,5 +385,6 @@ if __name__ == "__main__":
         batches=args.batches,
         batch_size=args.batch_size,
         model_path=args.model,
+        rewards_name=args.rewards,
         gamma=args.gamma,
     )
