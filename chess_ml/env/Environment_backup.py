@@ -1,3 +1,4 @@
+
 import logging
 import chess
 import chess.pgn
@@ -5,22 +6,19 @@ from collections import deque, deque
 from chess import Board, Move 
 from typing import Tuple
 import chess_ml.env.Rewards as Rewards
-from chess_ml.env.PositionSampler import PositionSampler, StandardPositionSampler
 
 
 class Environment: 
-    def __init__(self, rewards=[], position_sampler=None):
+    def __init__(self, rewards=[]):
         '''
         Environment acts as wrapper around `chess.Board` for reinforcement learning. 
         It has a state and returns a reward after each step. 
 
         Parameters: 
             rewards: set of activated reward functions
-            position_sampler: PositionSampler instance for loading starting positions (default: standard position)
         '''
         self._board   = Board()
         self._rewards = rewards
-        self.position_sampler = position_sampler if position_sampler is not None else StandardPositionSampler()
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
 
@@ -33,14 +31,10 @@ class Environment:
     def reset(self) -> Board: 
         self.reward_log = {r.__name__: [] for r in self._rewards}
         self.reward_log["sum"] = []
-        
-        # Load starting position from sampler
-        fen = self.position_sampler.sample()
-        self._board.set_fen(fen)
+        self._board.reset()
 
         self.mov_q = deque()
-        # Initialize pos_q with the starting board, not an empty one
-        self.pos_q = deque([self._board.copy()])
+        self.pos_q = deque([Board()])
         self.reward_hist = []
         return self._board
 
@@ -51,7 +45,18 @@ class Environment:
 
 
     def get_rewards(self): 
-        self.handle_remaining_rewards()
+        # add reward for last move of the game
+        if len(self.pos_q) > 0: 
+            self.pos_q.clear()
+            self.mov_q.clear()
+            r = [0 if reward.__name__ != "win" 
+                   else Rewards.WIN_VALUE for reward in self._rewards]
+            self.reward_hist.append(r)
+        # otherwise add zero rewards so that all games in batch have the same length
+        else: 
+            r = [0 for reward in self._rewards]
+            self.reward_hist.append(r)
+
         return self.reward_hist[0::2], self.reward_hist[1::2]
 
 
@@ -63,7 +68,17 @@ class Environment:
         # used for batch processing
         if self._board.is_game_over(): 
             board  = self._board if self._board.turn == chess.WHITE else self._board.mirror()
-            self.handle_remaining_rewards()
+            # add reward for last move of the game
+            if len(self.pos_q) > 0: 
+                self.pos_q.clear()
+                self.mov_q.clear()
+                r = [0 if reward.__name__ != "win" 
+                       else Rewards.WIN_VALUE for reward in self._rewards]
+                self.reward_hist.append(r)
+            # otherwise add zero rewards (for batch processing)
+            else: 
+                r = [0 for reward in self._rewards]
+                self.reward_hist.append(r)
             return board, True
 
         # model returns white move, mirror move to black if black to play
@@ -82,25 +97,6 @@ class Environment:
 
 
         return board, self._board.is_game_over()
-
-
-
-    def handle_remaining_rewards(self): 
-        # if there are still some unevaluated moves in the queue
-        if len(self.pos_q) > 0: 
-            r = self._board.copy()
-            p = self.pos_q.popleft()
-            m = self.mov_q.popleft()
-            self.pos_q.clear()
-            self.mov_q.clear()
-            r = [0 if reward.__name__ != "win" 
-                   else reward(p, m, r) for reward in self._rewards]
-            self.reward_hist.append(r)
-
-        # otherwise add zero rewards (for batch processing)
-        else: 
-            r = [0 for reward in self._rewards]
-            self.reward_hist.append(r)
     
 
 

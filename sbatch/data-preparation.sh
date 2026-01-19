@@ -15,7 +15,6 @@ eval "$(conda shell.bash hook)"
 conda activate chess_ml
 
 
-
 # Download Datasets
 echo "Downloading lichess puzzles"
 curl -L -o data/lichess_puzzles.zip\

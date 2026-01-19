@@ -8,7 +8,6 @@
 #SBATCH --gpus=rtx2080ti:1
 #SBATCH --mem=2G
 
-
 # setup python env
 module purge
 module load Anaconda3
