@@ -52,7 +52,7 @@ for arc in "$architectures[@]"; do
 		# pretrain with 10 epochs
 		dep_gm_10=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} --parsable \
 		  sbatch/imitation-training.sh \
-			-d ./data/gm_positions_labeled.csv \
+			-d ./data/gm_games_labeled.csv \
 			-n $architecture-gm-10-epochs \
 			-e 10 \
 			-a $architecture)
@@ -60,7 +60,7 @@ for arc in "$architectures[@]"; do
 		# pretrain with 20 epochs
 		dep_gm_20=$(sbatch --dependency=afterok:$dep_gm_10 --parsable sbatch/imitation-training.sh \
 			-m logs/im/$architecture-gm-10-epochs/models/checkpoint-best.pth \
-			-d ./data/gm_positions_labeled.csv \
+			-d ./data/gm_games_labeled.csv \
 			-n $architecture-gm-20-epochs \
 			-e 10 \
 			-a $architecture)
