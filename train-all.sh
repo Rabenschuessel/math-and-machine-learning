@@ -1,7 +1,7 @@
 #!/bin/bash
 
 architecture='linear'
-rewards=('win' 'material')
+rewards=('r_0' 'r_1' 'r_2')
 reward_name=$(IFS=_; printf '%s' "${rewards[*]}")
 
 # install environment when not existing
