@@ -35,7 +35,7 @@ for arc in "$architectures[@]"; do
 			-a $architecture)
 
 		# pretrain with 20 epochs
-		dep_pz_20=$(sbatch --dependency=afterok:$dep_pz10 --parsable sbatch/imitation-training.sh \
+		dep_pz_20=$(sbatch --dependency=afterok:$dep_pz_10 --parsable sbatch/imitation-training.sh \
 			-m logs/im/$architecture-pz-10-epochs/models/checkpoint-best.pth \
 			-d ./data/lichess_puzzle_labeled.csv \
 			-n $architecture-pz-20-epochs \
@@ -58,7 +58,7 @@ for arc in "$architectures[@]"; do
 			-a $architecture)
 
 		# pretrain with 20 epochs
-		dep_gm_20=$(sbatch --dependency=afterok:$dep_gm10 --parsable sbatch/imitation-training.sh \
+		dep_gm_20=$(sbatch --dependency=afterok:$dep_gm_10 --parsable sbatch/imitation-training.sh \
 			-m logs/im/$architecture-gm-10-epochs/models/checkpoint-best.pth \
 			-d ./data/gm_positions_labeled.csv \
 			-n $architecture-gm-20-epochs \
