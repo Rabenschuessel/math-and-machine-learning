@@ -462,3 +462,10 @@ NO_MATERIAL = [blunder_prevention, king_safety, give_check, win]
 MATERIAL_GAME = [material, win]
 JUST_WIN = [win]
 ### END ###
+
+
+reward_sets = {
+    "r_0": [win], 
+    "r_1": [material, control_center, win, king_safety],
+    "r_2": ALL
+}

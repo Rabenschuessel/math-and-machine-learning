@@ -156,8 +156,15 @@ def train(model, optim, batches, batch_size, env_params, log_dir, csv_logger, ga
 
 def main(*, model_path, experiment, architecture, batches, batch_size, gamma, rewards, position_type='standard', positions_file=None): 
     name2reward = {r.__name__:r for r in Rewards.ALL}
-    env_params  = {"rewards": [name2reward[r] for r in rewards]}
+    rew = set()
+    for r in rewards: 
+        if r in name2reward.keys(): 
+            rew.add(name2reward[r])
+        else: 
+            rew.update(Rewards.reward_sets[r])
+    env_params  = {"rewards": rew}
     device      = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(env_params)
 
     # Create position sampler
     if position_type == 'file':
@@ -222,7 +229,7 @@ if __name__ == "__main__":
     parser.add_argument('-g', '--batch_size' , default=16, type=int)
     parser.add_argument('-m', '--model', default=None)
     parser.add_argument('-n', '--experiment-name', default=0)
-    parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL], nargs="+", default=[])
+    parser.add_argument('-r', '--rewards', choices=[r.__name__ for r in Rewards.ALL] + list(Rewards.reward_sets.keys()), nargs="+", default=[])
     parser.add_argument('--positions-file', default=None, help='Path to file containing FEN positions (required for --position-type file)')
     parser.add_argument('--position-type', default='standard')
     args = parser.parse_args()
@@ -236,41 +243,4 @@ if __name__ == "__main__":
          rewards=args.rewards,
          position_type=args.position_type,
          positions_file=args.positions_file)
-
-
-
-# rewards_white_scalar = rewards_white.sum(dim=-1).permute(1, 0)
-# rewards_black_scalar = rewards_black.sum(dim=-1).permute(1, 0)
-# if rewards_white_scalar.shape != log_probs_white.shape or rewards_white_scalar.shape != done_white.shape:
-#     raise RuntimeError(
-#         "Shape mismatch for WHITE. This usually indicates reward/logprob timeline misalignment.\n"
-#         f"rewards_white_scalar: {tuple(rewards_white_scalar.shape)}\n"
-#         f"log_probs_white:      {tuple(log_probs_white.shape)}\n"
-#         f"done_white:           {tuple(done_white.shape)}"
-#     )
-#
-# if rewards_black_scalar.shape != log_probs_black.shape or rewards_black_scalar.shape != done_black.shape:
-#     raise RuntimeError(
-#         "Shape mismatch for BLACK. This usually indicates reward/logprob timeline misalignment.\n"
-#         f"rewards_black_scalar: {tuple(rewards_black_scalar.shape)}\n"
-#         f"log_probs_black:      {tuple(log_probs_black.shape)}\n"
-#         f"done_black:           {tuple(done_black.shape)}"
-#     )
-#
-# loss_white, returns_white = compute_policy_loss(
-#     log_probs=log_probs_white,
-#     rewards=rewards_white_scalar,
-#     done=done_white,
-#     gamma=gamma,
-#     normalize_advantage=normalize_advantage,
-# )
-# loss_black, returns_black = compute_policy_loss(
-#     log_probs=log_probs_black,
-#     rewards=rewards_black_scalar,
-#     done=done_black,
-#     gamma=gamma,
-#     normalize_advantage=normalize_advantage,
-# )
-#
-# loss = loss_white + loss_black
 

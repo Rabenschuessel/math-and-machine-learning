@@ -42,3 +42,12 @@ def transform_gm_games(df, max_positions):
     out['position'] = positions
     out['moves']    = moves
     return out
+
+rewards = ['control_center', 'r_0']
+name2reward = {r.__name__:r for r in Rewards.ALL}
+rew = set()
+for r in rewards: 
+    if r in name2reward.keys(): 
+        rew.add(name2reward[r])
+    else: 
+        rew.update(Rewards.reward_sets[r])
