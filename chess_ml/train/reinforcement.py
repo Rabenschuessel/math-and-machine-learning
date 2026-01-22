@@ -30,8 +30,7 @@ def train_batch(model,
                 log_dir: Path,
                 batch_nr: int,
                 gamma: float,
-                csv_logger: CSVLogger,
-                save_artifacts_every: int = 1):
+                csv_logger: CSVLogger):
 
     """Run one batch of self-play games, compute policy gradient loss, optimize model,
     and log metrics and artifacts.
@@ -63,27 +62,27 @@ def train_batch(model,
 
             pbar.update(sum(done) - pbar.n)
 
+
+    # transform to torch tensors
     rewards_white, rewards_black = zip(*[env.get_rewards() for env in envs])
     rewards_white   = torch.tensor(rewards_white)
+    log_probs_white = torch.stack(log_probs_white)
+    done_white      = torch.stack(done_white)
     rewards_black   = torch.tensor(rewards_black)
+    log_probs_black = torch.stack(log_probs_black)
+    done_black      = torch.stack(done_black)
+
+    save_rewards_and_games(log_dir, envs, rewards_white, rewards_black, batch_nr)
     stats = summarize_batch_stats(envs, rewards_white, rewards_black)
 
     # compute loss
-    loss = 0
-    if len(log_probs_white) > 0:
-        log_probs_white = torch.stack(log_probs_white)
-        done_white      = torch.stack(done_white)
-        rewards_white   = rewards_white.sum(dim=-1).permute(1, 0)
-        rewards_white   = reward2go(rewards_white, done_white, gamma)
-        loss_white      = (- rewards_white * log_probs_white).sum()
-        loss += loss_white
-    if len(log_probs_black) > 0:
-        log_probs_black = torch.stack(log_probs_black)
-        done_black      = torch.stack(done_black)
-        rewards_black   = rewards_black.sum(dim=-1).permute(1, 0)
-        rewards_black   = reward2go(rewards_black, done_black, gamma)
-        loss_black      = (- rewards_black * log_probs_black).sum()
-        loss += loss_black
+    rewards_white = rewards_white.sum(dim=-1).permute(1, 0)
+    rewards_black = rewards_black.sum(dim=-1).permute(1, 0)
+    rewards_white = reward2go(rewards_white, done_white, gamma)
+    rewards_black = reward2go(rewards_black, done_black, gamma)
+    loss_white    = (- rewards_white * log_probs_white).sum()
+    loss_black    = (- rewards_black * log_probs_black).sum()
+    loss          = loss_white + loss_black
 
 
     optim.zero_grad()
@@ -125,9 +124,6 @@ def train_batch(model,
     )
 
     csv_logger.log(row)
-
-    if save_artifacts_every > 0 and (batch_nr % save_artifacts_every == 0):
-        save_rewards_and_games(log_dir, envs, rewards_white, rewards_black, batch_nr)
 
 
 def train(model, optim, batches, batch_size, env_params, log_dir, csv_logger, gamma): 
