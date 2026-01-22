@@ -1,5 +1,5 @@
 #!/bin/bash
-DEBUG=1
+# Use DEBUG=1 for short run 
 
 set -x
 architecture='linear'
