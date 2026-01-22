@@ -31,7 +31,7 @@ def train_batch(model,
                 batch_nr: int,
                 gamma: float,
                 csv_logger: CSVLogger,
-                save_artifacts_every: int = 0):
+                save_artifacts_every: int = 1):
 
     """Run one batch of self-play games, compute policy gradient loss, optimize model,
     and log metrics and artifacts.
