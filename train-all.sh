@@ -1,5 +1,7 @@
 #!/bin/bash
+DEBUG=1
 
+set -x
 architecture='linear'
 rewards=('r_0' 'r_1' 'r_2')
 reward_name=$(IFS=_; printf '%s' "${rewards[*]}")
@@ -31,7 +33,7 @@ for arc in "$architectures[@]"; do
 		  sbatch/imitation-training.sh \
 			-d ./data/lichess_puzzle_labeled.csv \
 			-n $architecture-pz-10-epochs \
-			-e 10 \
+			-e ${DEBUG:-10} \
 			-a $architecture)
 
 		# pretrain with 20 epochs
@@ -39,7 +41,7 @@ for arc in "$architectures[@]"; do
 			-m logs/im/$architecture-pz-10-epochs/models/checkpoint-best.pth \
 			-d ./data/lichess_puzzle_labeled.csv \
 			-n $architecture-pz-20-epochs \
-			-e 10 \
+			-e ${DEBUG:-10} \
 			-a $architecture)
 	fi
 
@@ -54,7 +56,7 @@ for arc in "$architectures[@]"; do
 		  sbatch/imitation-training.sh \
 			-d ./data/gm_games_labeled.csv \
 			-n $architecture-gm-10-epochs \
-			-e 10 \
+			-e ${DEBUG:-10} \
 			-a $architecture)
 
 		# pretrain with 20 epochs
@@ -62,7 +64,7 @@ for arc in "$architectures[@]"; do
 			-m logs/im/$architecture-gm-10-epochs/models/checkpoint-best.pth \
 			-d ./data/gm_games_labeled.csv \
 			-n $architecture-gm-20-epochs \
-			-e 10 \
+			-e ${DEBUG:-10} \
 			-a $architecture)
 	fi
 
@@ -73,43 +75,43 @@ for arc in "$architectures[@]"; do
 		# reinforcement learning with newly initialized model
 		sbatch ${dep_env:+--dependency=afterok:$dep_env} \
 			sbatch/reinforcement-training.sh \
-			-n $architecture-untrained-$rewards_name \
+			-n $architecture-untrained-$reward \
 			-a $architecture \
-			-r $rewards
+			-r $reward ${DEBUG:+-b 1}
 
 		# PUZZLE GAMES 
 		# use model after 10 epochs
 		sbatch ${dep_pz_10:+--dependency=afterok:$dep_pz_10} \
 			sbatch/reinforcement-training.sh \
 			-m logs/im/$architecture-pz-10-epochs/models/checkpoint-best.pth \
-			-n $architecture-pretrained-pz-10-$rewards_name \
+			-n $architecture-pretrained-pz-10-$reward \
 			-a $architecture \
-			-r $rewards
+			-r $reward ${DEBUG:+-b 1}
 
 		# use model after 20 epochs
 		sbatch ${dep_pz_20:+--dependency=afterok:$dep_pz_20} \
 			sbatch/reinforcement-training.sh \
 			-m logs/im/$architecture-pz-20-epochs/models/checkpoint-best.pth \
-			-n $architecture-pretrained-pz-20-$rewards_name \
+			-n $architecture-pretrained-pz-20-$reward \
 			-a $architecture \
-			-r $rewards
+			-r $reward ${DEBUG:+-b 1}
 
 		# GM GAMES 
 		# use model after 10 epochs
 		sbatch ${dep_gm_10:+--dependency=afterok:$dep_gm_10} \
 			sbatch/reinforcement-training.sh \
 			-m logs/im/$architecture-gm-10-epochs/models/checkpoint-best.pth \
-			-n $architecture-pretrained-gm-10-$rewards_name \
+			-n $architecture-pretrained-gm-10-$reward \
 			-a $architecture \
-			-r $rewards
+			-r $reward ${DEBUG:+-b 1}
 
 		# use model after 20 epochs
 		sbatch ${dep_gm_20:+--dependency=afterok:$dep_gm_20} \
 			sbatch/reinforcement-training.sh \
 			-m logs/im/$architecture-gm-20-epochs/models/checkpoint-best.pth \
-			-n $architecture-pretrained-gm-20-$rewards_name \
+			-n $architecture-pretrained-gm-20-$reward \
 			-a $architecture \
-			-r $rewards
+			-r $reward ${DEBUG:+-b 1}
 
 	done
 done
