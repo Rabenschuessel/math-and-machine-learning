@@ -1,7 +1,6 @@
 #!/bin/bash
 # Use DEBUG=1 for short run 
 
-set -x
 architecture='linear'
 rewards=('r_0' 'r_1' 'r_2')
 reward_name=$(IFS=_; printf '%s' "${rewards[*]}")
@@ -9,14 +8,18 @@ reward_name=$(IFS=_; printf '%s' "${rewards[*]}")
 # install environment when not existing
 if ! conda env list | grep -q chess_ml; then 
 	echo "Installing Conda Environment"
+	set -x
 	dep_env=$(sbatch sbatch/install-env.sh)
+	set +x
 fi
 
 
 # install environment if needed
 if [ ! -f data/gm_games_labeled.csv -a ! -f data/lichess_puzzle_labeled.csv ]; then
 	echo "Downloading Datasets"
+	set -x
 	dep_env=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} sbatch/data-preparation.sh)
+	set +x
 fi
 
 
@@ -27,6 +30,7 @@ for arc in "$architectures[@]"; do
 	dep_pz_20=$dep_env
 	if [ ! -f logs/im/$architecture-pz-20-epochs/models/checkpoint-best.pth ]; then
 		echo "Train Puzzle Imitation Learning"
+		set -x
 
 		# pretrain with 10 epochs
 		dep_pz_10=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} --parsable \
@@ -43,6 +47,8 @@ for arc in "$architectures[@]"; do
 			-n $architecture-pz-20-epochs \
 			-e ${DEBUG:-10} \
 			-a $architecture)
+
+		set +x
 	fi
 
 	# only pretrain if not already done
@@ -50,6 +56,7 @@ for arc in "$architectures[@]"; do
 	dep_gm_20=$dep_env
 	if [ ! -f logs/im/$architecture-gm-20-epochs/models/checkpoint-best.pth ]; then
 		echo "Train GM Imitation Learning"
+		set -x 
 
 		# pretrain with 10 epochs
 		dep_gm_10=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} --parsable \
@@ -66,11 +73,14 @@ for arc in "$architectures[@]"; do
 			-n $architecture-gm-20-epochs \
 			-e ${DEBUG:-10} \
 			-a $architecture)
+
+		set +x
 	fi
 
 	# Train for different sets of rewards
 	for reward in "${rewards[@]}"; do
 		echo "Queing Rewards: $reward"
+		set -x
 		
 		# reinforcement learning with newly initialized model
 		sbatch ${dep_env:+--dependency=afterok:$dep_env} \
@@ -113,5 +123,6 @@ for arc in "$architectures[@]"; do
 			-a $architecture \
 			-r $reward ${DEBUG:+-b 1}
 
+		set +x
 	done
 done
