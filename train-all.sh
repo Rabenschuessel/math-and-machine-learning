@@ -23,7 +23,7 @@ if [ ! -f data/gm_games_labeled.csv -a ! -f data/lichess_puzzle_labeled.csv ]; t
 fi
 
 
-for arc in "$architectures[@]"; do 
+for arc in "${architectures[@]}"; do 
 	
 	# only pretrain if not already done
 	dep_pz_10=$dep_env
