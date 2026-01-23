@@ -180,6 +180,7 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--data', default='./data/lichess_puzzle_labeled.csv')
     parser.add_argument('-t', '--test_holdout', default=0.1, type=float)
     args = parser.parse_args()
+    print(args)
         
 
     main(experiment=args.experiment_name,

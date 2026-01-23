@@ -229,6 +229,7 @@ if __name__ == "__main__":
     parser.add_argument('--positions-file', default=None, help='Path to file containing FEN positions (required for --position-type file)')
     parser.add_argument('--position-type', default='standard')
     args = parser.parse_args()
+    print(args)
 
     main(experiment=args.experiment_name,
          batches=args.batches,
