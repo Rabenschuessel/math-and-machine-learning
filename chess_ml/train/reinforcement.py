@@ -135,10 +135,13 @@ def train(model, optim, batches, batch_size, env_params, log_dir, csv_logger, ga
     for batch in tqdm(range(batches), desc="Batches", unit="Batches"): 
         train_batch(model, optim, envs, log_dir, batch, gamma, csv_logger)
 
-        if batch % 10 == 0: 
+        if batch % 0 == 0: 
             tqdm.write("Save Checkpoint")
-            torch.save(model.state_dict(), models_dir / f"checkpoint-{batch}.pth")
+            torch.save(model.state_dict(), models_dir / f"checkpoint.pth")
 
+
+    tqdm.write("Save Checkpoint")
+    torch.save(model.state_dict(), models_dir / f"checkpoint.pth")
 
     ds = [xr.open_dataset(entry / 'rewards.nc') 
             for entry in (log_dir/"games").iterdir() 

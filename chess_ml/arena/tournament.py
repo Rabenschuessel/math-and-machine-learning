@@ -31,7 +31,7 @@ def map_model(m) -> dict[str, str | Path | None]:
     return dict(architecture=exp_arc, name=exp_name, path=exp_path)
 
 
-def main(path, filter_arc=None, ngames=100):
+def main(path, filter_arc=None, max_models=None, ngames=100):
     log_dir    = Path("logs/tournament/")
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
@@ -49,6 +49,8 @@ def main(path, filter_arc=None, ngames=100):
     models = list(map(map_model, models))
     if filter_arc is not None: 
         models = list(filter(lambda x: x['architecture'] == filter_arc, models))
+    if max_models is not None: 
+        models = models[:max_models]
 
     print("found models: ")
     print([m['name'] for m in models])
@@ -93,8 +95,10 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--path', default=".")
     parser.add_argument('-g', '--games', default=1000, type=int)
     parser.add_argument('-f', '--filter', default=None)
+    parser.add_argument('-m', '--max-models', default=None, type=int)
     args = parser.parse_args()
     main(path=args.path, 
          ngames=args.games,
+         max_models=args.max_models, 
          filter_arc=args.filter)
 
