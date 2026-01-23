@@ -160,11 +160,9 @@ def main(*, experiment, epochs, model_path, data_paths, test_holdout, batch_size
             torch.save(model.state_dict(), models_dir / f"checkpoint-best.pth")
 
 
+    model.load_state_dict(torch.load(models_dir / "checkpoint-best.pth"))
     tqdm.write("Test")
     test(test_dl, model, loss_fn, device)
-
-    print("Save Model")
-    torch.save(model.state_dict(), models_dir / f"final-model.pth")
 
 
 

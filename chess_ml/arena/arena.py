@@ -11,7 +11,7 @@ from chess_ml.env.Environment import Environment
 from chess_ml.model.ChessNN import ChessNN
 from chess_ml.model.FeedForward import ChessFeedForward
 from chess_ml.model.Convolution import ChessCNN
-from chess_ml.train import reinforcement
+from chess_ml.logging import save_rewards_and_games
 
 
 
@@ -37,7 +37,7 @@ def pit(model1, model2, envs, log_dir):
     rewards_white, rewards_black = zip(*[env.get_rewards() for env in envs])
     rewards_white   = torch.tensor(rewards_white)
     rewards_black   = torch.tensor(rewards_black)
-    reinforcement.log_batch(log_dir, envs, rewards_white, rewards_black, 0)
+    save_rewards_and_games(log_dir, envs, rewards_white, rewards_black, 0)
 
     return (Counter([env._board.result() for env in envs]))
 
@@ -71,7 +71,7 @@ def main(path1, path2, experiment, games):
     m2.eval()
 
     with torch.no_grad():
-        envs = [Environment(Rewards.ALL) for i in range(games)]
+        envs = [Environment() for i in range(games)]
         results = pit(m1, m2, envs, log_dir)
         print(results)
 
