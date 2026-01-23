@@ -26,52 +26,52 @@ fi
 for arc in "${architectures[@]}"; do 
 	
 	# only pretrain if not already done
+	dep_pz_1=$dep_env
 	dep_pz_10=$dep_env
-	dep_pz_20=$dep_env
-	if [ ! -f logs/im/$arc-pz-20-epochs/models/checkpoint-best.pth ]; then
+	if [ ! -f logs/im/$arc-pz-10-epochs/models/checkpoint-best.pth ]; then
 		echo "Train Puzzle Imitation Learning"
 		set -x
 
-		# pretrain with 10 epochs
-		dep_pz_10=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} --parsable \
+		# pretrain with 1 epochs
+		dep_pz_1=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} --parsable \
 		  sbatch/imitation-training.sh \
 			-d ./data/lichess_puzzle_labeled.csv \
-			-n $arc-pz-10-epochs \
-			-e ${DEBUG:-10} \
+			-n $arc-pz-1-epochs \
+			-e ${DEBUG:-1} \
 			-a $arc)
 
-		# pretrain with 20 epochs
-		dep_pz_20=$(sbatch --dependency=afterok:$dep_pz_10 --parsable sbatch/imitation-training.sh \
-			-m logs/im/$arc-pz-10-epochs/models/checkpoint-best.pth \
+		# pretrain with 10 epochs
+		dep_pz_10=$(sbatch --dependency=afterok:$dep_pz_1 --parsable sbatch/imitation-training.sh \
+			-m logs/im/$arc-pz-1-epochs/models/checkpoint-best.pth \
 			-d ./data/lichess_puzzle_labeled.csv \
-			-n $arc-pz-20-epochs \
-			-e ${DEBUG:-10} \
+			-n $arc-pz-10-epochs \
+			-e ${DEBUG:-1} \
 			-a $arc)
 
 		set +x
 	fi
 
 	# only pretrain if not already done
+	dep_gm_1=$dep_env
 	dep_gm_10=$dep_env
-	dep_gm_20=$dep_env
-	if [ ! -f logs/im/$arc-gm-20-epochs/models/checkpoint-best.pth ]; then
+	if [ ! -f logs/im/$arc-gm-10-epochs/models/checkpoint-best.pth ]; then
 		echo "Train GM Imitation Learning"
 		set -x 
 
-		# pretrain with 10 epochs
-		dep_gm_10=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} --parsable \
+		# pretrain with 1 epochs
+		dep_gm_1=$(sbatch ${dep_env:+--dependency=afterok:$dep_env} --parsable \
 		  sbatch/imitation-training.sh \
 			-d ./data/gm_games_labeled.csv \
-			-n $arc-gm-10-epochs \
-			-e ${DEBUG:-10} \
+			-n $arc-gm-1-epochs \
+			-e ${DEBUG:-1} \
 			-a $arc)
 
-		# pretrain with 20 epochs
-		dep_gm_20=$(sbatch --dependency=afterok:$dep_gm_10 --parsable sbatch/imitation-training.sh \
-			-m logs/im/$arc-gm-10-epochs/models/checkpoint-best.pth \
+		# pretrain with 10 epochs
+		dep_gm_10=$(sbatch --dependency=afterok:$dep_gm_1 --parsable sbatch/imitation-training.sh \
+			-m logs/im/$arc-gm-1-epochs/models/checkpoint-best.pth \
 			-d ./data/gm_games_labeled.csv \
-			-n $arc-gm-20-epochs \
-			-e ${DEBUG:-10} \
+			-n $arc-gm-10-epochs \
+			-e ${DEBUG:-1} \
 			-a $arc)
 
 		set +x
@@ -90,6 +90,14 @@ for arc in "${architectures[@]}"; do
 			-r $reward ${DEBUG:+-b 1}
 
 		# PUZZLE GAMES 
+		# use model after 1 epochs
+		sbatch ${dep_pz_1:+--dependency=afterok:$dep_pz_1} \
+			sbatch/reinforcement-training.sh \
+			-m logs/im/$arc-pz-1-epochs/models/checkpoint-best.pth \
+			-n $arc-pretrained-pz-1-$reward \
+			-a $arc \
+			-r $reward ${DEBUG:+-b 1}
+
 		# use model after 10 epochs
 		sbatch ${dep_pz_10:+--dependency=afterok:$dep_pz_10} \
 			sbatch/reinforcement-training.sh \
@@ -98,28 +106,20 @@ for arc in "${architectures[@]}"; do
 			-a $arc \
 			-r $reward ${DEBUG:+-b 1}
 
-		# use model after 20 epochs
-		sbatch ${dep_pz_20:+--dependency=afterok:$dep_pz_20} \
+		# GM GAMES 
+		# use model after 1 epochs
+		sbatch ${dep_gm_1:+--dependency=afterok:$dep_gm_1} \
 			sbatch/reinforcement-training.sh \
-			-m logs/im/$arc-pz-20-epochs/models/checkpoint-best.pth \
-			-n $arc-pretrained-pz-20-$reward \
+			-m logs/im/$arc-gm-1-epochs/models/checkpoint-best.pth \
+			-n $arc-pretrained-gm-1-$reward \
 			-a $arc \
 			-r $reward ${DEBUG:+-b 1}
 
-		# GM GAMES 
 		# use model after 10 epochs
 		sbatch ${dep_gm_10:+--dependency=afterok:$dep_gm_10} \
 			sbatch/reinforcement-training.sh \
 			-m logs/im/$arc-gm-10-epochs/models/checkpoint-best.pth \
 			-n $arc-pretrained-gm-10-$reward \
-			-a $arc \
-			-r $reward ${DEBUG:+-b 1}
-
-		# use model after 20 epochs
-		sbatch ${dep_gm_20:+--dependency=afterok:$dep_gm_20} \
-			sbatch/reinforcement-training.sh \
-			-m logs/im/$arc-gm-20-epochs/models/checkpoint-best.pth \
-			-n $arc-pretrained-gm-20-$reward \
 			-a $arc \
 			-r $reward ${DEBUG:+-b 1}
 

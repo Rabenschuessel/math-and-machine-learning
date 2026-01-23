@@ -99,7 +99,7 @@ def test(dataloader, model, loss_fn, device:Union[str,device]="cpu"):
     test_loss /= num_batches
     correct   /= size
     tqdm.write(f"Test Error: \n Accuracy {(100*correct):>0.1f}%, Avg loss: {test_loss:>8f}")
-    return test_loss
+    return test_loss, correct
 
 
 ################################################################################
@@ -140,10 +140,10 @@ def main(*, experiment, epochs, model_path, data_paths, test_holdout, batch_size
 
     if model_path is not None: 
         model.load_state_dict(torch.load(model_path))
-    model             = model.to(device)
-    optimizer         = torch.optim.Adam(model.parameters(), lr=lr)
-    loss_fn           = torch.nn.CrossEntropyLoss()
-    min_loss          = float('inf')
+    model     = model.to(device)
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+    loss_fn   = torch.nn.CrossEntropyLoss()
+    max_acc   = 0.0
 
     print("Test Model Pre-Training:")
     test(val_dl, model, loss_fn, device)
@@ -152,10 +152,10 @@ def main(*, experiment, epochs, model_path, data_paths, test_holdout, batch_size
     for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):
         train(train_dl, model, loss_fn, optimizer, device)
 
-        loss = test(val_dl, model, loss_fn, device)
+        loss, acc = test(val_dl, model, loss_fn, device)
 
-        if loss < min_loss: 
-            min_loss = loss
+        if acc > max_acc: 
+            max_acc = acc
             tqdm.write("Save Checkpoint")
             torch.save(model.state_dict(), models_dir / f"checkpoint-best.pth")
 
