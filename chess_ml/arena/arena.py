@@ -21,16 +21,19 @@ def pit(model1, model2, envs, log_dir):
     boards = [env.reset() for env in envs]
     done   = [False]
 
-    with tqdm(total=len(envs), desc="Games", unit="Games") as pbar: 
-        while not all(done): 
-            if color is chess.WHITE: 
-                moves, log_probs = model1.predict(boards)
-            else: 
-                moves, log_probs = model2.predict(boards)
-            boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
+    model1.eval()
+    model2.eval()
+    with torch.no_grad(): 
+        with tqdm(total=len(envs), desc="Games", unit="Games") as pbar: 
+            while not all(done): 
+                if color is chess.WHITE: 
+                    moves, log_probs = model1.predict(boards)
+                else: 
+                    moves, log_probs = model2.predict(boards)
+                boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
 
-            color = not color 
-            pbar.update(sum(done) - pbar.n)
+                color = not color 
+                pbar.update(sum(done) - pbar.n)
 
 
     # logging

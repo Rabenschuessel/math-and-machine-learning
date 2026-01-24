@@ -42,6 +42,7 @@ def main(path, filter_arc=None, max_models=None, ngames=100):
     device  = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     envs    = [Environment(Rewards.ALL) for i in range(ngames)]
     results = dict()
+    print(f'using device: {device}')
 
     path = Path(path)
     models = [p for p in path.rglob('models/')]
