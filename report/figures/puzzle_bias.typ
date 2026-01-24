@@ -23,6 +23,6 @@
     both positions are similar except for the black bishop on d5.
     In the position with the Bishop (right) black can win the game in one 
     move by checkmating with the queen on e2. 
-    playing queen e2 in the other position will loose the game. 
+    playing queen e2 in the other position will lose the game. 
     ]
 ) <fig-puzzle-bias> 

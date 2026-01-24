@@ -1,0 +1,27 @@
+stanford-imitation-learning: 
+  type: Web
+  title: Imitation Learning, Stanford University
+  url: https://web.stanford.edu/class/cs237b/pdfs/lecture/lecture_10111213.pdf 
+
+
+reward-shaping:
+  type: Web
+  title: Reward Shaping
+  author: Tim Miller
+  url: https://gibberblot.github.io/rl-notes/single-agent/reward-shaping.html
+
+
+
+
+lichess-puzzle-dataset:
+  type: Web
+  # author: tianmin
+  title: Lichess chess puzzle dataset
+  url: https://www.kaggle.com/datasets/tianmin/lichess-chess-puzzle-dataset
+
+
+gm-games-dataset:
+  type: Web
+  # author: kourtdim
+  title: All GM Chess Games on Chess.com
+  url: https://www.kaggle.com/datasets/dimitrioskourtikakis/gm-games-chesscom

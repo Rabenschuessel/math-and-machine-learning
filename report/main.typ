@@ -30,23 +30,70 @@
 
 = Introduction 
 
-In this Report we investigate imitating learning as a form of pretraining. 
-Specifically, we explore the effectiveness of pretraining with imitation 
-learning with heavily biased data. 
-We explore this for the game of chess,
-because of the availability of both heavily biased data (puzzle datasets), 
-and less biased data (grandmaster games). 
 
-To isolate the effect of the bias in pretraining data, 
-we train models with different architectures and reward functions. 
+Reinforcment learning (RL) is a field of machine learning concerned with desicion-making. 
+It is used in scenarios where an inteligent agent (e.g. chess player) 
+takes actions in an environment (e.g. chess game) 
+in order to maximize a reward (e.g. win). 
+The behavior of an agent is called a policy. 
+If rewards are sparse, it is difficult for an agent to learn a good policy. 
+Wining a game of chess for instance is a sparse reward. 
+It is difficult for an agent to learn chess with win as only reward, 
+as it is very unlikely for an agent to randomly win a game. 
+To help agents learn policies faster reward shaping 
+introduces further rewards that align with the original goal 
+and help to nudge the model in the right direction. 
+Reward shaping however introduces a new set of problems. 
+If the newly introduced rewards are not aligning with the ultimate goal for instance, 
+the model may choose to prioritize those and ignore the real goal (reward hacking). 
+@reward-shaping
 
 
-= Background
-== Imitation Learning
-== Reinforcement Learning
+Imitation learning is a paradigm in reinforcement learning, 
+in which an agent learns a policy through a set of expert demonstrations, 
+rather than an explicit reward function. 
+Behavior cloning is a specific imitation learning technique, 
+which utilizes supervised learning to learn this policy. 
+However, expert demonstrations used for behavior cloning are often
+not uniformly sampled from the state space leading to poor performance. 
+@stanford-imitation-learning
+
+One Idea for mitigating the drawbacks of both reward based reinforcement learning
+and behavior cloning would be to combine the two approaches.
+Behavior cloning as a pretraining could reduce the need for reward shaping, 
+while finetuning with reward based reinforcement learning 
+could iron out the sampling bias from the expert demonstrations. 
+In this document we investigate the interaction between pretraining 
+with behavior cloning and finetuning with reward shaping
+using different sets of expert demonstrations and reward functions. 
+We will apply this to the domain of chess,
+as available data is well split into different sampling biases.
 
 
-= Properties of Chess
+
+
+= Methods
+
+== Architecture
+
+While the hidden layers of the agent differ, they share the same input and output representation. 
+The network *input* contains the curent position,
+which consists of a piece encoding 
+(12 pieces: pawn, rook, knight, bishop, queen, king for both black and white)
+for each square on the chess board ($8 times 8$), resulting in an input tensor $b in RR^(8 times 8 times 12)$. 
+
+The *output* consists of two tensors representing from which square to move
+$m_"from"$ to which square $m_"to"$. 
+A joint probability is created by computing from-to logits $M = m_"from"m_"to"^T$, 
+masking out illegal moves (see @fig-legal-moves), and computing the softmax
+$pi(b) = sigma("mask"(m_"from"m_"to"^T))$.
+
+#include "figures/legal_moves.typ"
+
+
+== Behavior Cloning
+
+// train/val = 0.9/0.1
 
 For an agent to be successful in Chess it needs to master strategies and tactics. 
 *Tactics* defines moves that achieve short term gains. 
@@ -60,11 +107,12 @@ See @fig-tactics-vs-strategy for example positions.
 #include "figures/tactics_vs_strategy.typ"
 
 
-== Puzzle Data
+=== Puzzle Data
 
 Players that want to improve their tactical perception can train on puzzles. 
 A chess puzzle contains a position with a tactical motif (e.g. checkmate,...). 
 A player then needs to play 4-5 moves to prove their understanding of the motif. 
+@lichess-puzzle-dataset
 
 There are many published datasets containing chess puzzles, such as //TODO 
 These datasets are highly biased in that they solely contain tactical positions, 
@@ -75,41 +123,32 @@ leading to false positives (see @fig-puzzle-bias).
 
 #include "figures/puzzle_bias.typ"
 
-== Grandmaster Data
+=== Grandmaster Data
 
 Grandmaster games on the other hand are less biased than the puzzle dataset. 
 They cover entire games, and therefore contain positions
 with tactical motives, and strategic motives
+@gm-games-dataset
 
 #include "figures/gm_bias.typ"
 
 
-= Methods
-
-== Architecture
-
-We train agents with three different architectures: a Feedforward neural network, 
-a Convolutional neural network, and a Resnet. 
-While the networks differ in their hidden layers, they all share a common input and output dimension: 
-
-The network *input* contains the curent position.
-The input contains a piece encoding ($12$ pieces: pawn, rook, knight, bishop, queen, king for both black and white)
-for each square on the chess board ($8 times 8$), resulting in an input tensor of shape $8 times 8 times 12$. 
-
-The *output* is used to generate a move distribution. 
-It returns two vectors $m_"from" in RR^(64 times 1)$, 
-and $m_"to" in RR^(1 times 64)$. 
-A move matrix is then created from $M = m_("from")m_("to") in RR^(64 times 64)$. 
-Illegal moves are masked, and move distribution is created.
 
 
-== Imitation Pretraining
+== Rewards Shaping
+
+// different sets of rewards
+// r_0 aligns with goal but no guidance
+// r_1 aligns less but more guidance
+// r_2 aligns even less but more guidance
+
+// 16000 games: 16 per batch, 1000 batches
 
 
 
-== Reward Functions
 
 
 
 = Findings
 
+#bibliography("bib.yaml")
