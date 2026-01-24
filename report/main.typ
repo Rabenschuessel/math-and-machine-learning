@@ -88,9 +88,24 @@ with tactical motives, and strategic motives
 
 == Architecture
 
-=== Input/Output
+We train agents with three different architectures: a Feedforward neural network, 
+a Convolutional neural network, and a Resnet. 
+While the networks differ in their hidden layers, they all share a common input and output dimension: 
+
+The network *input* contains the curent position.
+The input contains a piece encoding ($12$ pieces: pawn, rook, knight, bishop, queen, king for both black and white)
+for each square on the chess board ($8 times 8$), resulting in an input tensor of shape $8 times 8 times 12$. 
+
+The *output* is used to generate a move distribution. 
+It returns two vectors $m_"from" in RR^(64 times 1)$, 
+and $m_"to" in RR^(1 times 64)$. 
+A move matrix is then created from $M = m_("from")m_("to") in RR^(64 times 64)$. 
+Illegal moves are masked, and move distribution is created.
+
 
 == Imitation Pretraining
+
+
 
 == Reward Functions
 

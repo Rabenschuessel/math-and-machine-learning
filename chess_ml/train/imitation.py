@@ -143,10 +143,9 @@ def main(*, experiment, epochs, model_path, data_paths, test_holdout, batch_size
     model     = model.to(device)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     loss_fn   = torch.nn.CrossEntropyLoss()
-    max_acc   = 0.0
 
     print("Test Model Pre-Training:")
-    test(val_dl, model, loss_fn, device)
+    _, max_acc = test(val_dl, model, loss_fn, device)
 
     print("Begin Training:")
     for epoch in tqdm(range(epochs), desc="Epochs", unit="Epoch"):

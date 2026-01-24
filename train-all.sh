@@ -45,7 +45,7 @@ for arc in "${architectures[@]}"; do
 			-m logs/im/$arc-pz-1-epochs/models/checkpoint-best.pth \
 			-d ./data/lichess_puzzle_labeled.csv \
 			-n $arc-pz-10-epochs \
-			-e ${DEBUG:-1} \
+			-e ${DEBUG:-10} \
 			-a $arc)
 
 		set +x
