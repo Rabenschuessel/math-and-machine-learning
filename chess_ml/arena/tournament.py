@@ -33,6 +33,8 @@ def map_model(m) -> dict[str, str | Path | None]:
 
 def main(path, filter_arc=None, max_models=None, ngames=100):
     log_dir    = Path("logs/tournament/")
+    if filter_arc is not None: 
+        log_dir = log_dir / filter_arc
     log_dir.mkdir(parents=True, exist_ok=True)
     logging.basicConfig(
         filename=log_dir / 'log.log',
