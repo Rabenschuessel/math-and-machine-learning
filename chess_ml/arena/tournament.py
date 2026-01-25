@@ -31,6 +31,7 @@ def save_game(env, log_dir, gamenr):
 
 
 def p(model1, model2, ngames, batch_size, log_dir): 
+    log_dir.mkdir(parents=True, exist_ok=True)
     envs = [Environment() for i in range(batch_size)]
     result = Counter()
     color           = chess.WHITE
