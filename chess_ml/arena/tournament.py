@@ -24,7 +24,7 @@ arc2class = {
     'resnet': ChessResBlock
 }
 
-def play_batch(model1, model2, envs, log_dir):
+def play_batch(model1, model2, envs, batchnr, log_dir):
     color           = chess.WHITE
     boards          = [env.reset() for env in envs]
     done            = [False] * len(envs)
@@ -43,7 +43,7 @@ def play_batch(model1, model2, envs, log_dir):
     tqdm.write("mean game length: {}".format(sum([len(env._board.move_stack) for env in envs])/len(envs)))
     for gamenr, env in enumerate(envs):
         game = env.get_game()
-        with open(log_dir / f"game-{gamenr:06d}.pgn", "w") as f:
+        with open(log_dir / f"game-{batchnr:03d}-{gamenr:06d}.pgn", "w") as f:
             print(game, file=f)
     return Counter([env._board.result() for env in envs])
 
@@ -55,7 +55,7 @@ def play(model1, model2, batches, batch_size, log_dir):
     envs = [Environment() for i in range(batch_size)]
     result = Counter()
     for batch in tqdm(range(batches), desc="Batches", unit="Batches"): 
-        result += play_batch(model1, model2, envs, log_dir)
+        result += play_batch(model1, model2, envs, batch, log_dir)
     return result
 
 
@@ -97,15 +97,15 @@ def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
     print("found models: ")
     print([m['name'] for m in models])
 
-    with tqdm(total=len(models)**2, desc="Matchups", unit="Matchups") as pbar:
+    with tqdm(total=len(models)*(len(models)-1), desc="Matchups", unit="Matchups") as pbar:
         i = 0 
         for m1 in models: 
             model1 = arc2class[m1['architecture']]().to(device)
             state  = torch.load(m1['path'], map_location=device)
             model1.load_state_dict(state)
             model1.eval()
-            
-            for m2 in models: 
+
+            for m2 in [m for m in models if m != m1]: 
                 model2 = arc2class[m2['architecture']]().to(device)
                 state  = torch.load(m2['path'], map_location=device)
                 model2.load_state_dict(state)
@@ -134,7 +134,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="pit models against each other")
     parser.add_argument('-p', '--path', default=".")
     parser.add_argument('-n', '--batch_size', default=20, type=int)
-    parser.add_argument('-b', '--batches', default=10, type=int)
+    parser.add_argument('-b', '--batches', default=5, type=int)
     parser.add_argument('-f', '--filter', default=None)
     parser.add_argument('-m', '--max-models', default=None, type=int)
     args = parser.parse_args()
