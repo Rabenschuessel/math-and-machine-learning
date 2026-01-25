@@ -1,65 +1,24 @@
-import pickle
 import argparse
+import pickle
+import torch
 import logging
-from pathlib import Path 
-from tqdm import tqdm
-import torch 
-import chess
+import pandas as pd
+from tqdm import tqdm 
 from pathlib import Path
 from collections import Counter
-
-import chess
-import torch
-from tqdm import tqdm
-
 from chess_ml.env import Rewards
 from chess_ml.env.Environment import Environment
+from chess_ml.model.FeedForward import ChessFeedForward
 from chess_ml.model.Convolution import ChessCNN
 from chess_ml.model.ResBlock import ChessResBlock
-from chess_ml.model.FeedForward import ChessFeedForward
+from chess_ml.arena.arena import pit
+
 
 arc2class = {
     'linear': ChessFeedForward,
     'cnn': ChessCNN,
     'resnet': ChessResBlock
 }
-
-def play_batch(model1, model2, envs, log_dir):
-    color           = chess.WHITE
-    boards          = [env.reset() for env in envs]
-    done            = [False] * len(envs)
-
-    with tqdm(total=len(envs), desc="Games", unit="Games") as pbar:
-        while not all(done):
-            if color == chess.WHITE:
-                moves, _ = model1.predict(boards)
-            else: 
-                moves, _ = model2.predict(boards)
-            boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
-
-            color = not color
-            pbar.update(sum(done) - pbar.n)
-
-    tqdm.write("mean game length: {}".format(sum([len(env._board.move_stack) for env in envs])/len(envs)))
-    for gamenr, env in enumerate(envs):
-        game = env.get_game()
-        with open(log_dir / f"game-{gamenr:06d}.pgn", "w") as f:
-            print(game, file=f)
-    return Counter([env._board.result() for env in envs])
-
-
-
-
-def play(model1, model2, batches, batch_size, log_dir): 
-    log_dir.mkdir(parents=True, exist_ok=True)
-    envs = [Environment() for i in range(batch_size)]
-    result = Counter()
-    for batch in tqdm(range(batches), desc="Batches", unit="Batches"): 
-        result += play_batch(model1, model2, envs, log_dir)
-    return result
-
-
-
 
 def map_model(m) -> dict[str, str | Path | None]: 
     exp_path = m
@@ -72,7 +31,7 @@ def map_model(m) -> dict[str, str | Path | None]:
     return dict(architecture=exp_arc, name=exp_name, path=exp_path)
 
 
-def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
+def main(path, filter_arc=None, max_models=None, ngames=100):
     log_dir    = Path("logs/tournament/")
     if filter_arc is not None: 
         log_dir = log_dir / filter_arc
@@ -83,6 +42,7 @@ def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
         format='%(message)s'  
     )
     device  = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    envs    = [Environment(Rewards.ALL) for i in range(ngames)]
     results = dict()
     print(f'using device: {device}')
 
@@ -94,8 +54,13 @@ def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
         models = list(filter(lambda x: x['architecture'] == filter_arc, models))
     if max_models is not None: 
         models = models[:max_models]
+
     print("found models: ")
     print([m['name'] for m in models])
+
+    df = pd.DataFrame(0, index=[m['name'] for m in models], columns=[m['name'] for m in models])
+    df.index.name   = 'White'
+    df.columns.name = 'Black'
 
     with tqdm(total=len(models)**2, desc="Matchups", unit="Matchups") as pbar:
         i = 0 
@@ -103,18 +68,16 @@ def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
             model1 = arc2class[m1['architecture']]().to(device)
             state  = torch.load(m1['path'], map_location=device)
             model1.load_state_dict(state)
-            model1.eval()
             
             for m2 in models: 
                 model2 = arc2class[m2['architecture']]().to(device)
                 state  = torch.load(m2['path'], map_location=device)
                 model2.load_state_dict(state)
-                model2.eval()
 
                 match_name = f"{m1['name']}__vs__{m2['name']}"
                 tqdm.write(match_name)
                 with torch.no_grad():
-                    matchup_results = play(model1, model2, nbatches, batch_size, log_dir / match_name)
+                    matchup_results = pit(model1, model2, envs, log_dir / match_name)
                     results[match_name] = results.get(match_name, Counter()) + matchup_results
                     tqdm.write(str(matchup_results))
 
@@ -133,13 +96,12 @@ def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="pit models against each other")
     parser.add_argument('-p', '--path', default=".")
-    parser.add_argument('-n', '--batch_size', default=20, type=int)
-    parser.add_argument('-b', '--batches', default=10, type=int)
+    parser.add_argument('-g', '--games', default=1000, type=int)
     parser.add_argument('-f', '--filter', default=None)
     parser.add_argument('-m', '--max-models', default=None, type=int)
     args = parser.parse_args()
     main(path=args.path, 
-         nbatches=args.batches,
-         batch_size=args.batch_size,
+         ngames=args.games,
          max_models=args.max_models, 
          filter_arc=args.filter)
+
