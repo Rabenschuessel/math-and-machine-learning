@@ -24,39 +24,45 @@ arc2class = {
     'resnet': ChessResBlock
 }
 
-def play_batch(model1, model2, envs, batchnr, log_dir):
+def save_game(env, log_dir, gamenr): 
+    game = env.get_game()
+    with open(log_dir / f"game--{gamenr:06d}.pgn", "w") as f:
+        print(game, file=f)
+
+
+def p(model1, model2, ngames, batch_size, log_dir): 
+    envs = [Environment() for i in range(batch_size)]
+    result = Counter()
     color           = chess.WHITE
     boards          = [env.reset() for env in envs]
-    done            = [False] * len(envs)
+    finished_games  = 0
 
-    with tqdm(total=len(envs), desc="Games", unit="Games") as pbar:
-        while not all(done):
-            if color == chess.WHITE:
+    with tqdm(total=ngames, desc="Games", unit="Games") as pbar:
+        while True: 
+            if color == chess.WHITE: 
                 moves, _ = model1.predict(boards)
             else: 
                 moves, _ = model2.predict(boards)
-            boards, done = zip(*[env.step(move) for env, move in zip(envs, moves)])
 
+            # step all moves
             color = not color
-            pbar.update(sum(done) - pbar.n)
+            boards = []
+            for env, move in zip(envs, moves): 
+                board, done = env.step(move)
 
-    tqdm.write("mean game length: {}".format(sum([len(env._board.move_stack) for env in envs])/len(envs)))
-    for gamenr, env in enumerate(envs):
-        game = env.get_game()
-        with open(log_dir / f"game-{batchnr:03d}-{gamenr:06d}.pgn", "w") as f:
-            print(game, file=f)
-    return Counter([env._board.result() for env in envs])
+                # reset if next turn white to play
+                if done and color == chess.WHITE: 
+                    save_game(env, log_dir, finished_games)
+                    result += Counter([env._board.result()])
 
+                    board = env.reset()
+                    pbar.update(finished_games - pbar.n)
+                    finished_games += 1
+                    if finished_games >= ngames: 
+                        return result
 
-
-
-def play(model1, model2, batches, batch_size, log_dir): 
-    log_dir.mkdir(parents=True, exist_ok=True)
-    envs = [Environment() for i in range(batch_size)]
-    result = Counter()
-    for batch in tqdm(range(batches), desc="Batches", unit="Batches"): 
-        result += play_batch(model1, model2, envs, batch, log_dir)
-    return result
+                # push to new boards
+                boards.append(board)
 
 
 
@@ -72,7 +78,7 @@ def map_model(m) -> dict[str, str | Path | None]:
     return dict(architecture=exp_arc, name=exp_name, path=exp_path)
 
 
-def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
+def main(path, filter_arc=None, max_models=None, ngames=100, batch_size=20):
     log_dir    = Path("logs/tournament/")
     if filter_arc is not None: 
         log_dir = log_dir / filter_arc
@@ -114,13 +120,12 @@ def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
                 match_name = f"{m1['name']}__vs__{m2['name']}"
                 tqdm.write(match_name)
                 with torch.no_grad():
-                    matchup_results = play(model1, model2, nbatches, batch_size, log_dir / match_name)
+                    matchup_results = p(model1, model2, ngames, batch_size, log_dir / match_name)
                     results[match_name] = results.get(match_name, Counter()) + matchup_results
                     tqdm.write(str(matchup_results))
 
                 i += 1
                 pbar.update(i - pbar.n)
-
 
     with open(log_dir / 'results.pkl', 'wb') as f: 
         pickle.dump(results, f)
@@ -133,13 +138,13 @@ def main(path, filter_arc=None, max_models=None, nbatches=10, batch_size=20):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog="pit models against each other")
     parser.add_argument('-p', '--path', default=".")
-    parser.add_argument('-n', '--batch_size', default=20, type=int)
-    parser.add_argument('-b', '--batches', default=5, type=int)
+    parser.add_argument('-n', '--ngames', default=100, type=int)
+    parser.add_argument('-b', '--batch_size', default=32, type=int)
     parser.add_argument('-f', '--filter', default=None)
     parser.add_argument('-m', '--max-models', default=None, type=int)
     args = parser.parse_args()
     main(path=args.path, 
-         nbatches=args.batches,
+         ngames=args.ngames,
          batch_size=args.batch_size,
          max_models=args.max_models, 
          filter_arc=args.filter)
