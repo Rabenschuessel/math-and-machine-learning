@@ -1,0 +1,75 @@
+log/imitation-learning-20138035.out:Namespace(epochs=1, experiment_name='linear-pz-1-epochs', batch_size=64, model=None, architecture='linear', data='./data/lichess_puzzle_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138035.out: Accuracy 6.5%, Avg loss: 3.128146
+log/imitation-learning-20138035.out: Accuracy 62.0%, Avg loss: 1.295728
+log/imitation-learning-20138035.out: Accuracy 62.0%, Avg loss: 1.293568
+log/imitation-learning-20138036.out:Namespace(epochs=10, experiment_name='linear-pz-10-epochs', batch_size=64, model='logs/im/linear-pz-1-epochs/models/checkpoint-best.pth', architecture='linear', data='./data/lichess_puzzle_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138036.out: Accuracy 62.0%, Avg loss: 1.295728
+log/imitation-learning-20138036.out: Accuracy 64.1%, Avg loss: 1.224623
+log/imitation-learning-20138036.out: Accuracy 64.9%, Avg loss: 1.197111
+log/imitation-learning-20138036.out: Accuracy 65.5%, Avg loss: 1.186317
+log/imitation-learning-20138036.out: Accuracy 65.5%, Avg loss: 1.187295
+log/imitation-learning-20138036.out: Accuracy 65.6%, Avg loss: 1.191411
+log/imitation-learning-20138036.out: Accuracy 65.6%, Avg loss: 1.191499
+log/imitation-learning-20138036.out: Accuracy 65.5%, Avg loss: 1.198801
+log/imitation-learning-20138036.out: Accuracy 65.5%, Avg loss: 1.198410
+log/imitation-learning-20138036.out: Accuracy 65.5%, Avg loss: 1.203884
+log/imitation-learning-20138036.out: Accuracy 65.4%, Avg loss: 1.213845
+log/imitation-learning-20138036.out: Accuracy 65.8%, Avg loss: 1.188208
+log/imitation-learning-20138037.out:Namespace(epochs=1, experiment_name='linear-gm-1-epochs', batch_size=64, model=None, architecture='linear', data='./data/gm_games_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138037.out: Accuracy 5.9%, Avg loss: 3.244102
+log/imitation-learning-20138037.out: Accuracy 31.0%, Avg loss: 2.365554
+log/imitation-learning-20138037.out: Accuracy 31.0%, Avg loss: 2.361904
+log/imitation-learning-20138038.out:Namespace(epochs=1, experiment_name='linear-gm-10-epochs', batch_size=64, model='logs/im/linear-gm-1-epochs/models/checkpoint-best.pth', architecture='linear', data='./data/gm_games_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138038.out: Accuracy 31.0%, Avg loss: 2.365554
+log/imitation-learning-20138038.out: Accuracy 31.8%, Avg loss: 2.336515
+log/imitation-learning-20138038.out: Accuracy 31.8%, Avg loss: 2.334318
+log/imitation-learning-20138054.out:Namespace(epochs=1, experiment_name='cnn-pz-1-epochs', batch_size=64, model=None, architecture='cnn', data='./data/lichess_puzzle_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138054.out: Accuracy 7.0%, Avg loss: 3.128537
+log/imitation-learning-20138054.out: Accuracy 69.8%, Avg loss: 0.995809
+log/imitation-learning-20138054.out: Accuracy 69.9%, Avg loss: 0.995192
+log/imitation-learning-20138055.out:Namespace(epochs=10, experiment_name='cnn-pz-10-epochs', batch_size=64, model='logs/im/cnn-pz-1-epochs/models/checkpoint-best.pth', architecture='cnn', data='./data/lichess_puzzle_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138055.out: Accuracy 69.8%, Avg loss: 0.995809
+log/imitation-learning-20138055.out: Accuracy 71.2%, Avg loss: 0.945968
+log/imitation-learning-20138055.out: Accuracy 72.1%, Avg loss: 0.916616
+log/imitation-learning-20138055.out: Accuracy 72.5%, Avg loss: 0.906504
+log/imitation-learning-20138055.out: Accuracy 72.8%, Avg loss: 0.894425
+log/imitation-learning-20138055.out: Accuracy 72.8%, Avg loss: 0.898131
+log/imitation-learning-20138055.out: Accuracy 72.8%, Avg loss: 0.896534
+log/imitation-learning-20138055.out: Accuracy 73.1%, Avg loss: 0.886887
+log/imitation-learning-20138055.out: Accuracy 73.2%, Avg loss: 0.885549
+log/imitation-learning-20138055.out: Accuracy 73.2%, Avg loss: 0.881942
+log/imitation-learning-20138055.out: Accuracy 73.2%, Avg loss: 0.892904
+log/imitation-learning-20138055.out: Accuracy 73.3%, Avg loss: 0.880108
+log/imitation-learning-20138056.out:Namespace(epochs=1, experiment_name='cnn-gm-1-epochs', batch_size=64, model=None, architecture='cnn', data='./data/gm_games_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138056.out: Accuracy 5.6%, Avg loss: 3.245497
+log/imitation-learning-20138056.out: Accuracy 38.5%, Avg loss: 2.040077
+log/imitation-learning-20138056.out: Accuracy 38.5%, Avg loss: 2.037911
+log/imitation-learning-20138057.out:Namespace(epochs=1, experiment_name='cnn-gm-10-epochs', batch_size=64, model='logs/im/cnn-gm-1-epochs/models/checkpoint-best.pth', architecture='cnn', data='./data/gm_games_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138057.out: Accuracy 38.5%, Avg loss: 2.040077
+log/imitation-learning-20138057.out: Accuracy 39.7%, Avg loss: 1.992882
+log/imitation-learning-20138057.out: Accuracy 39.6%, Avg loss: 1.990276
+log/imitation-learning-20138073.out:Namespace(epochs=1, experiment_name='resnet-pz-1-epochs', batch_size=64, model=None, architecture='resnet', data='./data/lichess_puzzle_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138073.out: Accuracy 5.4%, Avg loss: 3.137870
+log/imitation-learning-20138073.out: Accuracy 74.6%, Avg loss: 0.850866
+log/imitation-learning-20138073.out: Accuracy 74.6%, Avg loss: 0.854052
+log/imitation-learning-20138074.out:Namespace(epochs=10, experiment_name='resnet-pz-10-epochs', batch_size=64, model='logs/im/resnet-pz-1-epochs/models/checkpoint-best.pth', architecture='resnet', data='./data/lichess_puzzle_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138074.out: Accuracy 74.6%, Avg loss: 0.850866
+log/imitation-learning-20138074.out: Accuracy 77.7%, Avg loss: 3.254847
+log/imitation-learning-20138074.out: Accuracy 78.5%, Avg loss: 4.056895
+log/imitation-learning-20138074.out: Accuracy 79.5%, Avg loss: 10.297190
+log/imitation-learning-20138074.out: Accuracy 79.8%, Avg loss: 1.726082
+log/imitation-learning-20138074.out: Accuracy 80.5%, Avg loss: 0.630876
+log/imitation-learning-20138074.out: Accuracy 80.4%, Avg loss: 0.647697
+log/imitation-learning-20138074.out: Accuracy 80.9%, Avg loss: 1.141806
+log/imitation-learning-20138074.out: Accuracy 81.3%, Avg loss: 0.927757
+log/imitation-learning-20138074.out: Accuracy 81.3%, Avg loss: 0.873851
+log/imitation-learning-20138074.out: Accuracy 81.6%, Avg loss: 0.937115
+log/imitation-learning-20138074.out: Accuracy 81.7%, Avg loss: 0.964803
+log/imitation-learning-20138075.out:Namespace(epochs=1, experiment_name='resnet-gm-1-epochs', batch_size=64, model=None, architecture='resnet', data='./data/gm_games_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138075.out: Accuracy 5.9%, Avg loss: 3.251145
+log/imitation-learning-20138075.out: Accuracy 41.4%, Avg loss: 1.913333
+log/imitation-learning-20138075.out: Accuracy 41.5%, Avg loss: 1.911506
+log/imitation-learning-20138076.out:Namespace(epochs=1, experiment_name='resnet-gm-10-epochs', batch_size=64, model='logs/im/resnet-gm-1-epochs/models/checkpoint-best.pth', architecture='resnet', data='./data/gm_games_labeled.csv', test_holdout=0.1)
+log/imitation-learning-20138076.out: Accuracy 41.4%, Avg loss: 1.913333
+log/imitation-learning-20138076.out: Accuracy 43.5%, Avg loss: 1.824830
+log/imitation-learning-20138076.out: Accuracy 43.7%, Avg loss: 1.821493

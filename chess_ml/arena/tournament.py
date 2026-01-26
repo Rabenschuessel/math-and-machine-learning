@@ -79,7 +79,7 @@ def map_model(m) -> dict[str, str | Path | None]:
     return dict(architecture=exp_arc, name=exp_name, path=exp_path)
 
 
-def main(path, filter_arc=None, max_models=None, ngames=100, batch_size=20):
+def main(path, filter_arc=None, max_models=None, ngames=100, batch_size=20, skip=0):
     log_dir    = Path("logs/tournament/")
     if filter_arc is not None: 
         log_dir = log_dir / filter_arc
@@ -113,6 +113,11 @@ def main(path, filter_arc=None, max_models=None, ngames=100, batch_size=20):
             model1.eval()
 
             for m2 in [m for m in models if m != m1]: 
+                i += 1
+                pbar.update(i - pbar.n)
+                if i < skip: 
+                    continue
+
                 model2 = arc2class[m2['architecture']]().to(device)
                 state  = torch.load(m2['path'], map_location=device)
                 model2.load_state_dict(state)
@@ -125,8 +130,6 @@ def main(path, filter_arc=None, max_models=None, ngames=100, batch_size=20):
                     results[match_name] = results.get(match_name, Counter()) + matchup_results
                     tqdm.write(str(matchup_results))
 
-                i += 1
-                pbar.update(i - pbar.n)
 
     with open(log_dir / 'results.pkl', 'wb') as f: 
         pickle.dump(results, f)
@@ -142,10 +145,12 @@ if __name__ == "__main__":
     parser.add_argument('-n', '--ngames', default=100, type=int)
     parser.add_argument('-b', '--batch_size', default=32, type=int)
     parser.add_argument('-f', '--filter', default=None)
+    parser.add_argument('-s', '--skip', default=0, type=int)
     parser.add_argument('-m', '--max-models', default=None, type=int)
     args = parser.parse_args()
     main(path=args.path, 
          ngames=args.ngames,
+         skip=args.skip,
          batch_size=args.batch_size,
          max_models=args.max_models, 
          filter_arc=args.filter)

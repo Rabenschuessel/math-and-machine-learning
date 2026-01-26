@@ -1,0 +1,12 @@
+linear-pz_1  Accuracy 62.0%
+linear-pz_10 Accuracy 65.8%
+linear-gm_1  Accuracy 31.0%
+linear-gm_10 Accuracy 31.8%
+cnn-pz_1     Accuracy 69.9%
+cnn-pz_10    Accuracy 73.3%
+cnn-gm_1     Accuracy 38.5%
+cnn-gm_10    Accuracy 39.6%
+resnet-pz_1  Accuracy 74.6%
+resnet-pz_10 Accuracy 81.7%
+resnet-gm_1  Accuracy 41.5%
+resnet-gm_10 Accuracy 43.7%
