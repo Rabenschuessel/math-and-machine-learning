@@ -6,6 +6,7 @@
   (
     type: "input", 
     image: board(fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")),
+    label: "position",
     height: 6,
     depth: 6,
   ),
@@ -44,11 +45,13 @@
     ),
     height: 6,
     depth: 8,
+    label: "move distribution",
   ),
 ),
   // show-legend: true,
+  scale: 65%,
 ),
 caption: [
-    Architecture of the residual block model used.
+  Residual block architecture
   ]
 ) <fig-res-net>

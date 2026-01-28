@@ -8,6 +8,7 @@
     image: board(fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")),
     height: 6,
     depth: 6,
+    label: "position",
   ),) + 
   for channel in layers {
   ((
@@ -44,10 +45,12 @@
     ),
     height: 6,
     depth: 8,
+    label: "move distribution",
   ), ), 
+  scale: 65%,
 ), 
   caption: [
-    Architecture of the convolutional model used.
+    Convolutional neural network 
   ] 
 ) <fig-conv-net>
 

@@ -6,7 +6,7 @@ from pathlib import Path
 # read results into data
 files = [Path('./logs/tournament/500-games/cnn.out'),
          Path('./logs/tournament/500-games/resnet.out'), 
-         # Path('./logs/tournament/linear.out'), 
+         Path('./logs/tournament/500-games/fc.out'), 
          ]
 # files = [Path('./logs/tournament/cnn.out')]
 data = []

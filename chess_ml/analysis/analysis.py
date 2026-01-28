@@ -14,8 +14,9 @@ values    = df.index.levels
 variables = df.index.names
 
 # row is for both black and white games
-dfr = (df + (500 - df.transpose())) / 1000
-df = dfr
+df = (df + (500 - df.transpose())) / 1000
+
+
 
 
 
