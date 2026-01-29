@@ -3,17 +3,22 @@
 #import "@preview/codly:1.3.0": *
 #import "@preview/codly-languages:0.1.1": *
 #import "@preview/board-n-pieces:0.9.0": *
+#let board = board.with(
+  white-square-fill: rgb("#d2eeea"),
+  black-square-fill: rgb("#567f96"),
+)
 
 #show: codly-init.with()
 #codly(zebra-fill: none)
 
 #show: it => basic-report(
-  doc-title: "Exploration of Rewards Shaping and Immitation Learning in Chess",
+  doc-title: "Exploration of Rewards Shaping and Imitation Learning in Chess",
   author: "Jakob Lambert-Hartmann",
   language: "en",
   compact-mode: false,
   show-outline: false,
   heading-font: "Fira Math",
+  // heading-color: rgb("#567f96"),
   it
 )
 
@@ -32,16 +37,18 @@
 
 
 // basic rl terms
-Reinforcment learning (RL) is a field of machine 
-learning concerned with desicion-making. 
-It is used in scenarios where an inteligent agent 
+Reinforcement learning (RL) is a field of machine 
+learning concerned with decision-making. 
+It is used in scenarios where an intelligent agent 
 takes actions in an environment in order to maximize a reward 
-(e.g. a chess agent learning to maximize the change of wining). 
+(e.g. a chess agent learning to maximize the chance of wining). 
 The actions chosen by the agent (e.g. chess move) are determined by a policy $pi$. 
 Whenever the agent takes an action, it receives a reward from the environment. 
 Winning a game for instance will yield a positive reward, losing a negative reward, 
 and otherwise the reward will be zero.
-Over the course of training the agent adapts its policy in order to maximize rewards.
+Over the course of training the agent adapts its policy in order to maximize rewards (see @fig-rl).
+
+#include "figures/rl.typ"
 
 // sparse rewards and reward shaping
 If rewards are sparse, meaning most rewards are zero,
@@ -52,105 +59,143 @@ It is difficult for an agent to learn chess with win as only reward,
 as it is very unlikely for an agent to randomly win a game. 
 To help agents learn policies faster reward shaping 
 introduces further rewards that align with the original goal 
-and help to nudge the model in the right direction. 
-Reward shaping however introduces a new set of problems. 
-If the newly introduced rewards are not aligning with the ultimate goal for instance, 
-the model may choose to prioritize those and ignore the real goal (reward hacking). 
-@reward-shaping
+and help to nudge the model in the right direction @reward-shaping.
+Reward shaping however is challenging and time-consuming.
+Common difficulties are: 
+/ Reward Hacking: Agents exploiting unintended loopholes in the 
+  reward functions @comprehensive-reward-shaping
+/ Misaligned Rewards: Rewards are misaligned with the 
+  true objective @comprehensive-reward-shaping
+/ Difficulty in Evaluation: It is difficult to evaluate the effectiveness of 
+  a reward function @comprehensive-reward-shaping
+
+
+
 
 // Imitation learning
-Imitation learning is a paradigm in reinforcement learning, 
+Imitation learning, on the other hand, is a paradigm in reinforcement learning, 
 in which an agent learns a policy through a set of expert demonstrations, 
 rather than an explicit reward function. 
 Behavior cloning is a specific imitation learning technique, 
 which utilizes supervised learning to learn this policy. 
-However, expert demonstrations used for behavior cloning are often
-not uniformly sampled from the state space leading to poor performance. 
-@stanford-imitation-learning
+Using supervised learning circumvents reward shaping, however,
+expert demonstrations used for behavior cloning are often
+not uniformly sampled from the state space,
+which may lead to poor performance @stanford-imitation-learning.
 
 // combination of both and goal of project
 One Idea for mitigating the drawbacks of both reward based reinforcement learning
 and behavior cloning would be to combine the two approaches.
-Behavior cloning as a pretraining could reduce the need for reward shaping, 
-while finetuning with reward based reinforcement learning 
+Behavior cloning as a pretraining step could reduce the need for reward shaping, 
+while fine-tuning with reward based reinforcement learning 
 could iron out the sampling bias from the expert demonstrations. 
 In this document we investigate the interaction between pretraining 
-with behavior cloning and finetuning with reward shaping
-using different sets of expert demonstrations and reward functions. 
-We will apply this to the domain of chess,
-as available data is well split into different sampling biases.
+with behavior cloning and fine-tuning with reward shaping
+using different sets of expert demonstrations and reward functions,
+which we will apply to the game of chess.
 
 
 
 
 = Methods
 
-We trained models with different configurations, 
-namely the neural network architecture, 
-the datasets used for behavior cloning, 
-and the reward functions used for reinforcement learning. 
-In this section we discuss details of each aspect
-before evaluating our results in the next chapter.
+To investigate the interaction between behavior cloning and reward shaping
+designed reward functions of varying densities,
+and selected expert demonstrations with varying sampling bias. 
+We then trained models for all behavior cloning dataset and 
+reward function combinations.
+For better generalizability of our findings, 
+we performed the same experiment with three neural network architectures. 
+
+In the following sections we will describe our choices in model architecture, 
+behavior cloning, and reward shaping in more detail.
+
 
 
 == Neural Network Architecture
 
-We trained models with three different architectures: 
+We repeated our experiment using three neural network architectures: 
 a fully connected neural network (see @fig-fc-net), 
-a convolutional neural network (see @fig-conv-net), 
-and a residual block network (see @fig-res-net).
+a convolutional neural network (see @fig-conv-net) @cnn, 
+and a residual network (see @fig-res-net) @resnet.
 
-While the hidden layers of the agent differ,
-they all share a common input and output representation.
-The network *input* contains the curent position,
-is represented by a piece encoding 
-(12 pieces: pawn, rook, knight, bishop, queen, king for both black and white)
-for each square on the chess board ($8 times 8$). 
-resulting in an input tensor $x in RR^(8 times 8 times 12)$. 
+While the architectures differ in their hidden layers,
+they share the same input and output representation.
+The *input* is a one hot encoding of the current position. 
+There are $8 times 8$ squares on a chess board and 12 distinct pieces 
+(black and white version of: pawn, rook, knight, bishop, queen, and king). 
+One simplification we made, is that it's always white to play. 
+To generate a move for black, the position first needs to be mirrored. 
+The reason is that otherwise, we would either need to train two models, 
+or that the model would need to learn the same patterns,
+once for white and once for black. 
+As chess is a symmetric game,
+this simplification does not reduce the model's capability. 
 
-The *output* consists of two tensors representing from which square to move
-$m_"from"$ to which square $m_"to"$. 
-A joint probability is created by computing from-to logits $M = m_"from"m_"to"^T$, 
-masking out illegal moves (see @fig-legal-moves), and computing the softmax
-$pi(b) = sigma("mask"(m_"from"m_"to"^T))$.
+The network *output* represents a distribution over moves. 
+It is implemented as two tensors (from which move, to which move), 
+with which we compute joint probability distribution. 
+In chess the number of legal moves depends on the position (see @fig-legal-moves), 
+as such the move distribution is computed from the set of legal moves. 
+This representation limits the number of parameters for faster training,
+however it is not without drawbacks: 
+/ Limiting Agent Expressiveness: In chess, when a Pawn moves up the 
+  board it can promote to any piece (e.g. transform into a queen). 
+  In our output representation it is only possible to promote to a queen. 
+  However, promotions are rare, and almost all pawns are promoted to a queen. 
+  This simplification should not affect model performance much. 
+/ Inductive Bias: The representation of the move distribution as a joint probability 
+  introduces inductive bias, that may misalign with chess. 
+  This approach implies that the choice of $"Square"_"from"$ and $"Square"_"to"$ 
+  are independent. This does not hold true for all positions 
+  (e.g. moving the queen to a square may lead to a checkmate,
+  while other pieces would prolong the game).
 
 #include "figures/chess/legal_moves.typ"
 
 
 
 
-
 == Behavior Cloning
 
+For behavior cloning we chose two datasets (puzzles and master games) 
+with different expert demonstration bias. 
+Models were trained on either dataset for one or 10 epochs. 
+To measure the effect of pretraining,
+we also had a model that was not subject to pretraining.
+The following sections will describe both datasets in further detail. 
+Before describing the dataset bias however, we need to introduce some domain specific concepts.
+
+=== Tactics and Strategy
 For an agent to be successful in Chess it needs to master both strategies and tactics. 
 *Tactics* defines moves that achieve short term gains. 
 This may be capturing opponent pieces or checkmating the opponent king. 
 *Strategy* on the other hand defines moves with a long term benefit. 
-This could be positioning a piece to put pressure on the opponents king, 
-which may lead to a checkmate in 20-30 moves.
-See @fig-tactics-vs-strategy for example positions. 
+This could include positioning a piece to put pressure on the opponents king, 
+which may lead to a checkmate in 20--30 moves.
+@fig-tactics-vs-strategy highlights those concepts with two example positions. 
+One key difference between tactical moves and strategic moves, 
+is the number of viable alternatives.
+Whereas tactics commonly has only one, or maybe two viable moves in a position, 
+strategy often has a range of viable moves with little difference. 
+This property affects how suitable both aspects are to supervised learning. 
 
 #include "figures/chess/tactics_vs_strategy.typ"
 
-For behavior cloning we chose two datasets, where one is biased towards strategic,
-and the other towards tactical positions,
-which we will discuss in in more detail in the following sections. 
-For both datasets we saved the model after one epoch and the best model out of 
-10 epochs.
 
 
 === Puzzle Data
 
 Players that want to improve their tactical perception can train on puzzles. 
-A chess puzzle contains a position with a tactical motif (e.g. checkmate,...). 
-A player then needs to play 4-5 moves to prove their understanding of the motif. 
+A chess puzzle contains a position with a tactical motif (e.g. checkmate, ...). 
+A player then needs to play 4--5 moves to prove their understanding of the motif. 
 
 There are many published datasets containing chess puzzles, 
 such as the Lichess puzzle dataset @lichess-puzzle-dataset. 
 Positions in these datasets are highly biased in that they solely contain tactical positions, 
 underrepresenting strategic motifs.
-Furthermore, positions in such datasets always contain a tactical motiv. 
-The lack of negatives may may lead the model to be tactically overconfident, 
+Furthermore, positions in such datasets always contain a tactical motif. 
+The lack of negatives may lead the model to be tactically overconfident, 
 leading to false positives (see @fig-puzzle-bias).
 
 #include "figures/chess/puzzle_bias.typ"
@@ -161,7 +206,7 @@ Grandmaster games are overall less biased than the puzzle dataset.
 They cover entire games, and therefore contain positions
 with tactical and positions with strategic motifs.
 However, they still are biased in that they only represent top level play. 
-Furthermore, grandmasters are able to recognize a losing position earlier than
+Furthermore, Grandmasters are able to recognize a losing position earlier than
 club level players. As such, they often resign multiple moves before 
 an unavoidable checkmate (see @gm-games-dataset). 
 This underrepresentation of checkmates, 
@@ -175,10 +220,10 @@ may make it difficult for our model to convert a wining position into a checkmat
 
 == Rewards Shaping
 
-Models trained with reinforcement learning through selfplay. 
-The models played 16 games before updating based with REINFORCE.  // TODO cite
+Models trained with reinforcement learning through self play. 
+The models played 16 games before updating based with REINFORCE @reinforce.  
 This was performed for 1000 iterations,
-resultsing in 16000 games played both as white and as black. 
+resulting in 16000 games played both as white and as black. 
 After each chosen action a set of reward function was evaluated. 
 
 We used three sets of reward functions ranging form sparse to dense: 
@@ -186,10 +231,10 @@ We used three sets of reward functions ranging form sparse to dense:
 // TODO more information 
 / Sparse: The sparse reward consisted of only one reward function, 
   only a nonzero reward at the end of the game.
-  A positive reward was awarded for a win, whereas a los returned a negative reward. 
+  A positive reward was awarded for a win, whereas a loss returned a negative reward. 
 / Medium: The reward set of medium sparsity returned 
   material, control center, win, king safety
-/ Dense: The dense rewardset returned 
+/ Dense: The dense reward-set returned 
   control outer center, control center, castling, promoting, blunder prevention,
   material, king safety, give check, win
 
@@ -206,26 +251,112 @@ which represents the portion of available points the model received.
 
 = Results
 
-To evaluate the model performance,
-we let the models play against each other. 
+// evalutation
+In this chapter we will evaluate the trained models. 
+For behavior cloning it is possible to evaluate the models on the test set. 
+For models using reinforcement learning however, 
+there is no test set to evaluate our model. 
+Thus we evaluated the models though self play against each other.
 Each model played 500 games as white and 500 games as black
-against each other model with the same architecture 
-(i.e. cnn models only played cnns, etc.). 
+against all model with the same architecture 
+(i.e. CNN models only played CNN, etc.). 
 
-The models trained with supervised training performed much better on the puzzle
-test set.
-However a good accuracy in the masters game is difficult, 
-as a position may have multiple viable moves, and training datapoints. 
+// score
+In chess there are three possible game outcomes: win, loss, and draw. 
+To compute a single score we have used the tournament score 
+system where a win is worth 1 point, a draw 0.5, and a loss 0. 
 
-#include "figures/analysis/imitation-learning.typ"
+We aggregated the points for each match (two models playing 1000 games). 
+We then normalized the match results into a proportion of points. 
+This value has a similar interpretation to a win percentage. 
 
-#include "figures/analysis/analysis-plots.typ"
+#include "figures/analysis/tt/results.typ"
+
+At first glance there is no clear superior training strategy (see @table-all-results).
+The best models, however, are either with sparse rewards 
+or without reinforcement learning all together.
+In the following section we further investigate 
+behavior cloning and reward shaping, and whether 
+
+
+== Behavior Cloning
+
+For models pretrained with supervised learning it is possible to evaluate 
+them on their test sets.
+The models trained on puzzle data generalized much better 
+on test (see @table-training-test). 
+However, the test accuracy is probably not representative, 
+as the Grandmaster dataset contains multiple data points where the 
+same position has a different label. 
+
+#include "figures/analysis/bc/training-accuracy.typ"
+
+The game results are a better metric to compare 
+the performance of different pretraining strategy (see @table-pretraining).
+Again, there is no clear pretraining strategy that dominates, 
+however there is a significant improvement in 
+pretraining of any length with any dataset compared to pure reinforcement learning.
+
+#include "figures/analysis/bc/mean-rl.typ"
+
+
+When only comparing models that did not use reinforcement learning however, 
+pretraining on puzzle data for 10 epochs yields the best performance 
+across all architectures (see @table-pretraining-no-rl).
+
+#include "figures/analysis/bc/mean-no-rl.typ"
+
+In conclusion, training on puzzle games for 10 epochs 
+yielded the best results without any reinforcement learning. 
+This pretraining strategy however,
+does retain its advantage when coupled with reinforcement learning.
 
 
 
-= Furter Work 
+== Reward Shaping
 
-// remove duplicate positions with different labels in GM dataset
+
+When comparing the reward functions in models that were not pretrained, 
+there is no clear reward function set, that dominates the others 
+(see @table-rl).
+The fully connected network increases performance as the rewards get denser. 
+The CNN and ResNet however show no trend. 
+
+#include "figures/analysis/rl/mean-no-train.typ"
+
+When considering the reward set across all pretraining strategy however, 
+models with sparse rewards tend to perform slightly better. 
+For the residual network however, 
+there is a significant drop in performance after any type 
+of reinforcement learning (see @table-rl).
+The results highlight the complexity of reward shaping, 
+as our rewards which should have guided the model towards better policies, 
+did not show any increase in performance. 
+
+
+= Conclusion
+
+Out of the training strategies used,
+there was no strategy that performed better across all network architecture. 
+
+
+
+
+/ Mixing puzzles and GM games: 
+    Training on a mix of puzzle and Grandmaster positions could reduce 
+    the demonstration bias. 
+/ Data preparation on GM games: 
+  Multiple labels for the same data points prevented the models to generalize well. 
+  A strategy to unify the labels could improve the model's performance 
+  (e.g. selecting one move or having move distributions as label).
+/ Longer reinforcement learning: 
+  Only training our models for 1000 batches of reinforcement learning 
+  may be too little for any significant improvement. 
+/ Smaller reinforcement learning batches: 
+  Aggregating the loss for 16 games may hinder the model in learning, 
+  as it reduces noise too much.
+
+
 
 
 

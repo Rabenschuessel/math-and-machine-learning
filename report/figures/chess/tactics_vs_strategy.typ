@@ -1,4 +1,9 @@
 #import "@preview/board-n-pieces:0.9.0": *
+#let board = board.with(
+  white-square-fill: rgb("#d2eeea"),
+  black-square-fill: rgb("#567f96"),
+  arrow-fill: green,
+)
 
 #figure(
   stack(

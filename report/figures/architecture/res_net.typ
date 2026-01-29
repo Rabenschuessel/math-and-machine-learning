@@ -1,5 +1,10 @@
 #import "@preview/board-n-pieces:0.9.0": *
 #import "@preview/neural-netz:0.3.0": draw-network
+#let board = board.with(
+  white-square-fill: rgb("#d2eeea"),
+  black-square-fill: rgb("#567f96"),
+  arrow-fill: green,
+)
 
 #let nblocks = 20 
 #figure(draw-network((
@@ -50,6 +55,7 @@
 ),
   // show-legend: true,
   scale: 65%,
+  palette: "cold"
 ),
 caption: [
   Residual block architecture

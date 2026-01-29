@@ -1,4 +1,5 @@
 import pandas as pd
+from pandas.core.frame import Level
 
 pd.set_option('styler.format.precision', 3)
 to_typst = True
@@ -20,8 +21,10 @@ df = (df + (500 - df.transpose())) / 1000
 
 
 
+
+
 # mean points won by each model config
-s = df.mean(axis=1).unstack(level='architecture')
+s = df.mean(axis=1).unstack(level=('architecture', 'rewards'))
 print_df(s)
 
 # mean points by pretraining
@@ -29,6 +32,7 @@ print_df(s)
 # resnet puzzles best, but not by much
 s = df.mean(axis=1).groupby(['architecture', "train"]).mean().unstack(level='architecture')
 print_df(s)
+
 
 # print(pd.DataFrame(s.unstack(level='architecture')).style.to_typst())
 

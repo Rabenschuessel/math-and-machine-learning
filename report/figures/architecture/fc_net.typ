@@ -1,5 +1,10 @@
 #import "@preview/board-n-pieces:0.9.0": *
 #import "@preview/neural-netz:0.3.0": draw-network
+#let board = board.with(
+  white-square-fill: rgb("#d2eeea"),
+  black-square-fill: rgb("#567f96"),
+  arrow-fill: green,
+)
 
 #let layers = (512, 512, 512)
 #figure(draw-network(
@@ -41,6 +46,7 @@
     label: "move distribution",
   ), ), 
   scale: 65%,
+  palette: "cold"
 ), 
   caption: [
     Fully connected network 

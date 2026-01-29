@@ -8,7 +8,7 @@ files = [Path('./logs/tournament/500-games/cnn.out'),
          Path('./logs/tournament/500-games/resnet.out'), 
          Path('./logs/tournament/500-games/fc.out'), 
          ]
-# files = [Path('./logs/tournament/cnn.out')]
+files = [Path('./logs/tournament/finals/finals.out')]
 data = []
 for file in files: 
     with open(file) as f: 
@@ -64,4 +64,4 @@ for match in data:
 
 
 
-df.to_parquet('results.parquet')
+df.to_parquet('results_final.parquet')

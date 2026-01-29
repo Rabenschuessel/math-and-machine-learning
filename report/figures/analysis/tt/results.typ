@@ -1,0 +1,21 @@
+#set table(stroke: none)
+
+#figure(table(
+  columns: 13,
+  [arch], table.vline(), table.cell(colspan: 4)[cnn], table.vline(),  table.cell(colspan: 4)[fc], table.vline(), table.cell(colspan: 4)[resnet],
+  [rl], [none], [r_0], [r_1], [r_2], [none], [r_0], [r_1], [r_2], [none], [r_0], [r_1], [r_2],
+  table.hline(),
+  [train], [], [], [], [], [], [], [], [], [], [], [], [],
+
+  [none], [nan], [0.266], [0.235], [0.251], [nan], [0.289], [0.307], [0.335], [nan], [0.408], [0.407], [0.399],
+  [pz_1], [0.400], [0.478], [0.564], [0.433], [0.507], table.cell(fill: aqua)[0.697], [0.631], [0.623], [0.830], [0.410], [0.410], [0.409],
+  [pz_10], [0.446], [0.672], [0.515], [0.520], [0.530], [0.637], [0.521], [0.558], table.cell(fill: aqua)[0.925], [0.403], [0.403], [0.403],
+  [gm_1], [0.396], [0.605], [0.650], [0.572], [0.390], [0.483], [0.523], [0.494], [0.797], [0.411], [0.409], [0.424],
+  [gm_10], [0.434], table.cell(fill: aqua)[0.714], [0.694], [0.654], [0.418], [0.494], [0.538], [0.526], [0.870], [0.387], [0.398], [0.399],
+),
+caption: [
+  Expected proportion of points for all models (best models highlighted in aqua).
+  The proportions are means of all matchs 
+  (e.g. Model using residual network pretrained on puzzle data with no reinforcement learning, 
+  wins 92.5% of points against all other residual network models)
+]) <table-all-results>

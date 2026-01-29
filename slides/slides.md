@@ -270,4 +270,14 @@ $\rightarrow$
 
 ## Reward Shaping
 
+## Best Model
+
+| architecture  | train  | rewards   | points% |
+|---------------|--------|-----------|---------|
+| cnn           | gm_10  | r_0       | 67.4    |
+| fc            | pz_1   | r_0       | 17.6    |
+| resnet        | pz_10  | none      | 65.0    |
+
+
+[well... it's better than random (probably)](https://lichess.org/cuRJkeJ1#82)
 
