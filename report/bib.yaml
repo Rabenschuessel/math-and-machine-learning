@@ -42,6 +42,13 @@ gm-games-dataset:
   url: https://www.kaggle.com/datasets/dimitrioskourtikakis/gm-games-chesscom
 
 
+reinforce-openai: 
+  type: Web
+  title: "Spinning Up: Part 3: Intro to Policy Optimization"
+  author: OpenAI
+  url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html
+
+
 resnet:
   type: article
   title: Deep residual learning for image recognition
@@ -86,5 +93,6 @@ reinforce:
   parent:
     type: periodical
     title: CoRR
+
 
 

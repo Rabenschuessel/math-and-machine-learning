@@ -182,43 +182,91 @@ This property affects how suitable both aspects are to supervised learning.
 
 #include "figures/chess/tactics_vs_strategy.typ"
 
-
-
 === Puzzle Data
 
-Players that want to improve their tactical perception can train on puzzles. 
-A chess puzzle contains a position with a tactical motif (e.g. checkmate, ...). 
-A player then needs to play 4--5 moves to prove their understanding of the motif. 
+The first dataset we used is the Lichess puzzle dataset. @lichess-puzzle-dataset. 
+Chess puzzles are positions which contain a tactical motif and 
+a sequence of approximately 1-5 moves to win an advantage.
+Lichess is a popular online chess website,
+which generates those puzzles from games played on the website. 
+As such, they contain positions from all levels of play.
 
-There are many published datasets containing chess puzzles, 
-such as the Lichess puzzle dataset @lichess-puzzle-dataset. 
-Positions in these datasets are highly biased in that they solely contain tactical positions, 
-underrepresenting strategic motifs.
-Furthermore, positions in such datasets always contain a tactical motif. 
-The lack of negatives may lead the model to be tactically overconfident, 
-leading to false positives (see @fig-puzzle-bias).
+While the dataset spans all levels of play,
+it is still a heavily biased sample of all possible states.
+Puzzle positions, by nature, contain positions with a single best move.
+For most chess positions, especially strategic positions, there is no "solution".
+Such positions are missing from the dataset. 
+This bias may lead to a network that lacks strategy and 
+is overconfident in tactical themes (see @fig-puzzle-bias)
 
 #include "figures/chess/puzzle_bias.typ"
 
-=== Grandmaster Data
+=== Master Games
 
-Grandmaster games are overall less biased than the puzzle dataset. 
-They cover entire games, and therefore contain positions
-with tactical and positions with strategic motifs.
-However, they still are biased in that they only represent top level play. 
-Furthermore, Grandmasters are able to recognize a losing position earlier than
-club level players. As such, they often resign multiple moves before 
-an unavoidable checkmate (see @gm-games-dataset). 
-This underrepresentation of checkmates, 
-may make it difficult for our model to convert a wining position into a checkmate
-(see @fig-gm-bias).
+The second dataset we used contains games played by Grandmasters @gm-games-dataset.
+Compared to puzzles,
+this dataset contains a better balance between tactics and strategy,
+as it contains entire games.
+As those are games played by Grandmasters however,
+they are biased toward higher level play.
+For Grandmasters it is typical to resign in lost positions,
+rather than wait for an unavoidable checkmate.
+The underrepresentation of checkmates may lead to a model that plays well,
+but is unable to convert a wining position into a win.
+
+Another difficulty with master games is choosing a label for positions in the dataset.
+The puzzle dataset was well suited to supervised learning,
+as every position has exactly one winning move.
+This is not the case for the Grandmaster games (see @fig-gm-bias)
+A few possibilities to deal with this would be to
+Select one move: the first move encountered is the only label chosen label
+Predict distribution: aggregate the different positions into 
+distribution of moves and use it as label.
+
+Out of time constraints however, 
+we implemented neither and included copies of the same data-point with different labels.
+This is reflected in the test accuracy discussed in the next chapter.
 
 #include "figures/chess/gm_bias.typ"
 
 
 
+== Reinforcement Learning
 
-== Rewards Shaping
+// Policy Gradient
+There are multiple reinforcement learning methods 
+which can be combined with imitation learning. 
+// cite q learning 
+Out of simplicity however, we chose a policy gradient with the REINFORCE algorithm.
+Reinforcement learning using policy gradient directly learns 
+a policy function $pi_theta (a | s)$,
+where actions are chosen by sampling the policy. 
+Parameters $theta$ of the policy are optimized via gradient ascent on expected return.
+
+Given a parameterized policy $pi_theta (a | s)$ that outputs action probabilities,
+the expected return can be expressed as
+$
+J(pi_theta) = E_(tau ~ pi_theta)[R(tau)],
+$
+where $tau$ is a trajectory and $R(tau)$ is its total discounted reward.
+Using the policy gradient theorem @reinforce-openai this expectation can be rewritten as
+$
+nabla_theta J(pi_theta)
+= E_(tau ~ pi_theta)[
+  sum_(t=0)^T nabla log pi_theta (a_t | s_t) G_t
+].
+$
+
+Here,$G_t = sum_(t' = t)^T gamma^(t' - t) r_(t')
+$
+is the cumulative return-to-go from timestep $t$.
+In practice, REINFORCE estimates this gradient using samples from the policy.
+This is done by collecting trajectories under the current policy,
+computing the returns for each action, and taking a step in the direction of
+$nabla log pi_theta(a_t | s_t) G_t.
+$
+
+=== Reward Shaping
 
 Models trained with reinforcement learning through self play. 
 The models played 16 games before updating based with REINFORCE @reinforce.  
@@ -227,8 +275,6 @@ resulting in 16000 games played both as white and as black.
 After each chosen action a set of reward function was evaluated. 
 
 We used three sets of reward functions ranging form sparse to dense: 
-
-// TODO more information 
 / Sparse: The sparse reward consisted of only one reward function, 
   only a nonzero reward at the end of the game.
   A positive reward was awarded for a win, whereas a loss returned a negative reward. 
@@ -239,10 +285,8 @@ We used three sets of reward functions ranging form sparse to dense:
   material, king safety, give check, win
 
 
-In chess a win yields one point, a loss zero, and a draw half a point. 
-To compare the models we summed points for each matchup (two models playing 500 games).
-We normalized the point values to the range $[0,1]$, 
-which represents the portion of available points the model received. 
+
+
 
 
 
@@ -251,32 +295,23 @@ which represents the portion of available points the model received.
 
 = Results
 
-// evalutation
-In this chapter we will evaluate the trained models. 
-For behavior cloning it is possible to evaluate the models on the test set. 
-For models using reinforcement learning however, 
-there is no test set to evaluate our model. 
-Thus we evaluated the models though self play against each other.
-Each model played 500 games as white and 500 games as black
-against all model with the same architecture 
-(i.e. CNN models only played CNN, etc.). 
+To evaluate the trained models,
+we let them play against each other and recorded the wins, losses, and draws.
+Every model played 1000 games against all other models with the same architecture.
+Using tournament chess scoring we aggregated a score 
+(1 point for a win, 0 for a loss, and 0.5 for a draw).
+The tables in this chapter use a score normalized to a range $[0,1]$,
+which can be interpreted similarly to a win percentage. 
+In the following sections we evaluate behavior cloning and imitation learning 
+in isolation in 
 
-// score
-In chess there are three possible game outcomes: win, loss, and draw. 
-To compute a single score we have used the tournament score 
-system where a win is worth 1 point, a draw 0.5, and a loss 0. 
-
-We aggregated the points for each match (two models playing 1000 games). 
-We then normalized the match results into a proportion of points. 
-This value has a similar interpretation to a win percentage. 
+// Table ref
+@table-all-results shows the proportion of points gained for all training configurations.
+There is no dominating pretraining strategy, 
+regarding reinforcement learning however, 
+the best models used the sparse rewards or reinforcement learning altogether. 
 
 #include "figures/analysis/tt/results.typ"
-
-At first glance there is no clear superior training strategy (see @table-all-results).
-The best models, however, are either with sparse rewards 
-or without reinforcement learning all together.
-In the following section we further investigate 
-behavior cloning and reward shaping, and whether 
 
 
 == Behavior Cloning
@@ -285,20 +320,20 @@ For models pretrained with supervised learning it is possible to evaluate
 them on their test sets.
 The models trained on puzzle data generalized much better 
 on test (see @table-training-test). 
-However, the test accuracy is probably not representative, 
-as the Grandmaster dataset contains multiple data points where the 
-same position has a different label. 
+But as mentioned in the discussion on the datasets, 
+this is likely to be caused by the labeling inconsistencies where different 
+moves where played in the same positions. 
 
 #include "figures/analysis/bc/training-accuracy.typ"
 
-The game results are a better metric to compare 
+Because of those labeling inconsistencies, game results are a better metric to compare 
 the performance of different pretraining strategy (see @table-pretraining).
-Again, there is no clear pretraining strategy that dominates, 
-however there is a significant improvement in 
+In contrast to the test accuracy, there is no clear pretraining strategy 
+that dominates other models in play.
+However, there is a significant improvement in 
 pretraining of any length with any dataset compared to pure reinforcement learning.
 
 #include "figures/analysis/bc/mean-rl.typ"
-
 
 When only comparing models that did not use reinforcement learning however, 
 pretraining on puzzle data for 10 epochs yields the best performance 
@@ -308,8 +343,7 @@ across all architectures (see @table-pretraining-no-rl).
 
 In conclusion, training on puzzle games for 10 epochs 
 yielded the best results without any reinforcement learning. 
-This pretraining strategy however,
-does retain its advantage when coupled with reinforcement learning.
+With reinforcement learning however 
 
 
 
@@ -336,15 +370,17 @@ did not show any increase in performance.
 
 = Conclusion
 
-Out of the training strategies used,
-there was no strategy that performed better across all network architecture. 
+In conclusion, out of the training strategies used,
+there was no strategy that performed better across all network architectures. 
+However, We were able to show, that reward shaping is indeed difficult, 
+as no rewards or sparse rewards performed better than the complex reward functions.
 
-
-
-
+As our strongest models performed poorly against even a novice chess player, 
+our experiment might yield different results with stronger models.
+A few possibilities to train stronger models are: 
 / Mixing puzzles and GM games: 
-    Training on a mix of puzzle and Grandmaster positions could reduce 
-    the demonstration bias. 
+  Training on a mix of puzzle and Grandmaster positions could reduce 
+  the demonstration bias. 
 / Data preparation on GM games: 
   Multiple labels for the same data points prevented the models to generalize well. 
   A strategy to unify the labels could improve the model's performance 
