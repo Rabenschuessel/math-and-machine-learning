@@ -93,8 +93,7 @@ class Environment:
             m = self.mov_q.popleft()
             self.pos_q.clear()
             self.mov_q.clear()
-            r = [0 if reward.__name__ != "win" 
-                   else reward(p, m, r) for reward in self._rewards]
+            r = [reward(p, m, r) for reward in self._rewards]
             self.reward_hist.append(r)
 
         # otherwise add zero rewards (for batch processing)
@@ -110,7 +109,7 @@ class Environment:
 
         if len(self.pos_q) >= 3: 
             state  = self.pos_q.popleft()
-            result = self.pos_q[1]
+            result = self.pos_q.popleft()
             move   = self.mov_q.popleft()
 
             rewards     = [reward(state, move, result) for reward in self._rewards]
