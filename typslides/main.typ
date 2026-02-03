@@ -5,7 +5,7 @@
   accent-color: rgb("#23373b"),
   aspect-ratio: "4-3",
   config-info(
-    title: [Exploring Behavior Cloning and Reward Shaping],
+    title: [Exploring Interaction Between Behavior Cloning and Reward Shaping in Chess],
     author: [Jakob Lambert-Hartmann],
     date: datetime.today(),
   ),
@@ -37,7 +37,7 @@
     - Prioritizing wrong rewards
 
 ][
-=== Behavior Cloning
+=== Imitation Learning: Behavior Cloning
 
 #include "figures/imitation.typ"
 
@@ -77,46 +77,40 @@
 
 
 
-= Methods
-
-== Architecture
-#slide(composer: (3fr, 1.5fr))[
-
-
-=== Input
-
-- tensor `shape = (8,8,12)`: 
-    - $8 times 8$ squares
-    - 12 pieces: ${"White", "Black"} times$
-        ${"Pawn", "Rook", "Knight", "Bishop", "Queen", "King"}$
-
-
-=== Output
-
-- Move distribution: from square #sym.arrow to square
-- *But:* Not all moves are legal #sym.arrow mask illegal moves
-
-][
-
-#include "figures/chess/legal_moves.typ"
-]
+= Architecture
 
 == Architecture
 
 #slide(composer: (3fr, 2fr))[
 === FCNN
+
 - 3 hidden layers: 512 neurons
 === CNN
+
 - increasing number of channels:  
 - $12 arrow 32 arrow 64 arrow 128 arrow 256 arrow 32$
 === ResNet
-- 20 blocks with 64 channels
 
+- 20 blocks with 64 channels
 ][
   #include "figures/architecture/fc_net.typ"
   #include "figures/architecture/conv_net.typ"
   #include "figures/architecture/res_net.typ"
+]
 
+
+== Architecture
+#slide(composer: (3fr, 1.5fr))[
+=== Input
+- tensor `shape = (8,8,12)`: 
+    - $8 times 8$ squares
+    - 12 pieces: ${"White", "Black"} times$
+        ${"Pawn", "Rook", "Knight", "Bishop", "Queen", "King"}$
+=== Output
+- Move distribution: from square #sym.arrow to square
+- *But:* Not all moves are legal #sym.arrow mask illegal moves
+][
+#include "figures/chess/legal_moves.typ"
 ]
 
 
@@ -124,6 +118,10 @@
 
 
 
+
+
+
+= Imitation Learning
 
 == Background: Chess
 
@@ -160,6 +158,7 @@
 
 
 
+= Reinforcement Learning
 
 == Reinforcement Learning: Reward Shaping
 
@@ -184,11 +183,6 @@
   - 1000 batches with 16 games each (REINFORCE) 
 #sym.arrow 57 models 
 
-=== Evaluation 
-
-- All models plays 1000 games against all other model (same architecture)
-- Normalized tournament score (win 1 point, draw 0.5 points, loss 0 points)
-
 
 
 
@@ -200,14 +194,14 @@
 
 
 
-== Overal Results
-
-#include "figures/analysis/tt/results.typ"
-
-- No optimal training strategy visible 
-- Sparse / No rewards seem to perform better
-
-=== Let's take a closer look!
+// == Overal Results
+//
+// #include "figures/analysis/tt/results.typ"
+//
+// - No optimal training strategy visible 
+// - Sparse / No rewards seem to perform better
+//
+// === Let's take a closer look!
 
 == Behavior Cloning: Training Accuracy 
 
@@ -218,30 +212,38 @@
 
 == Behavior Cloning
 
-#slide(composer: (2fr, 2fr))[
-  === BC models without RL
-  #include "figures/analysis/bc/mean-no-rl.typ"
+=== Evaluation 
 
+- All models plays 1000 games against all other model (same architecture)
+- Normalized tournament score (win 1 point, draw 0.5 points, loss 0 points)
+
+
+// #slide(composer: (2fr, 2fr))[
   === BC model with RL 
   #include "figures/analysis/bc/mean-rl.typ"
-][
-  - *Without RL*: Slightly better with 10 epochs of puzzle
-  - *With RL*: No pattern between pretraining and performance
-]
+// ][
+  - Models improve significantly with pretraining
+// ]
 
 
 
 == Reward Shaping
 
-#slide(composer: (2fr, 2fr))[
-  === RL models with BC
-  #include "figures/analysis/rl/mean-no-train.typ"
-  === RL models without BC
+#align(center)[
+#stack(
+  dir: ltr, 
+  spacing: 2cm,
+[
+
+  === RL models with Pretraining
   #include "figures/analysis/rl/mean-pretrain.typ"
-][
-  - *Without Pretraining:* sparse / no rewards perform better than dense
-  - *With Pretraining:* No pattern between rewards and performance
-]
+],[
+
+  === RL models without Pretraining
+  #include "figures/analysis/rl/mean-no-train.typ"
+])]
+- Depending on the model RL hurts performance
+- Sparse rewards generally better
 
 
 == Conclusion
@@ -261,7 +263,7 @@
 
 #align(center)[
 Well....
-#link("https://lichess.org/cuRJkeJ1#82")
+#link("https://lichess.org/cuRJkeJ1#0")
 ]
 
 
