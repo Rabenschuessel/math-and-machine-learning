@@ -31,7 +31,8 @@
 === Problems
 
 - Sparse rewards #sym.arrow poor performance
-- Reward Shaping #sym.arrow difficult: 
+- Reward Shaping #sym.arrow difficult
+  @comprehensive-reward-shaping: 
     - Missaligned rewards
     - Reward hacking 
     - Prioritizing wrong rewards
@@ -48,6 +49,7 @@
 === Problems
 
 - Demonstration sample bias #sym.arrow poor performance
+  @stanford-imitation-learning
 
 ]
 
@@ -134,7 +136,7 @@
 
 #slide(composer: (2fr, 2fr))[
   #align(bottom)[
-=== Lichess Puzzles 
+=== Lichess Puzzles @lichess-puzzle-dataset
 - 6 million positions 
 - tactical positions 
 
@@ -144,7 +146,7 @@
 #include "figures/chess/puzzle_bias.typ"
 ]][
   #align(bottom)[
-=== GM games
+=== GM games @gm-games-dataset
 - chess.com master games 
 - balance tactics/strategy
 
@@ -268,4 +270,5 @@ Well....
 
 
 
-
+== References
+#bibliography("bib.yaml", title: none)

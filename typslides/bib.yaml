@@ -1,0 +1,98 @@
+stanford-imitation-learning: 
+  type: Web
+  title: Imitation Learning, Stanford University
+  url: https://web.stanford.edu/class/cs237b/pdfs/lecture/lecture_10111213.pdf 
+
+
+reward-shaping:
+  type: Web
+  title: Reward Shaping
+  author: Tim Miller
+  url: https://gibberblot.github.io/rl-notes/single-agent/reward-shaping.html
+
+
+
+comprehensive-reward-shaping:
+  type: article
+  title: Comprehensive overview of reward engineering and shaping in advancing reinforcement learning applications
+  author:
+  - Ibrahim, Sinan
+  - Mostafa, Mostafa
+  - Jnadi, Ali
+  - Salloum, Hadi
+  - Osinenko, Pavel
+  date: 2024
+  parent:
+    type: periodical
+    title: IEEE Access
+    publisher: IEEE
+
+
+lichess-puzzle-dataset:
+  type: Web
+  # author: tianmin
+  title: Lichess chess puzzle dataset
+  url: https://www.kaggle.com/datasets/tianmin/lichess-chess-puzzle-dataset
+
+
+gm-games-dataset:
+  type: Web
+  # author: kourtdim
+  title: All GM Chess Games on Chess.com
+  url: https://www.kaggle.com/datasets/dimitrioskourtikakis/gm-games-chesscom
+
+
+reinforce-openai: 
+  type: Web
+  title: "Spinning Up: Part 3: Intro to Policy Optimization"
+  author: OpenAI
+  url: https://spinningup.openai.com/en/latest/spinningup/rl_intro3.html
+
+
+resnet:
+  type: article
+  title: Deep residual learning for image recognition
+  author:
+  - He, Kaiming
+  - Zhang, Xiangyu
+  - Ren, Shaoqing
+  - Sun, Jian
+  date: 2016
+  page-range: 770-778
+  parent:
+    type: proceedings
+    title: Proceedings of the IEEE conference on computer vision and pattern recognition
+
+
+
+cnn:
+  type: article
+  title: An introduction to convolutional neural networks
+  author:
+  - O'shea, Keiron
+  - Nash, Ryan
+  date: 2015
+  parent:
+    type: periodical
+    title: arXiv preprint arXiv:1511.08458
+
+
+
+reinforce:
+  type: article
+  title: Sample Efficient Reinforcement Learning with {REINFORCE}
+  author:
+  - Zhang, Junzi
+  - Kim, Jongho
+  - O'Donoghue, Brendan
+  - Boyd, Stephen P.
+  date: 2020
+  url: https://arxiv.org/abs/2010.11364
+  serial-number:
+    arxiv: '2010.11364'
+  parent:
+    type: periodical
+    title: CoRR
+
+
+
