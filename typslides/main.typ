@@ -206,9 +206,9 @@ $
 === Training 
 - *Architecture:* ${"FCNN", "CNN", "ResNet"}$
 - *Pretraining:*  ${"Puzzles", "Masters"} times {"1 Epoch", "10 Epochs"}, {"Untrained"}$
-- *Reward Set:*   ${"R_0", "R_1", "R_2"}$
+- *Reward Set:*   ${"NoRL", "R_0", "R_1", "R_2"}$
   - 1000 batches with 16 games each (REINFORCE) 
-#sym.arrow 57 models 
+#sym.arrow 57 models (removing untrained models)
 
 
 
@@ -271,6 +271,7 @@ $
 ])]
 - Depending on the model RL hurts performance
 - Sparse rewards generally better
+- Example: FC Models with 1 epoch on puzzle get 3800 more points compared to 10 epochs over 72000 games
 
 
 == Conclusion
