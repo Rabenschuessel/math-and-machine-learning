@@ -162,6 +162,31 @@
 
 = Reinforcement Learning
 
+
+== REINFORCE 
+
+- *Goal:* Directly optimize a stochastic policy $pi_theta (a | s)$ by maximizing the expected return  
+
+$
+J(theta) = E_(tau ~ pi_theta)[ sum_(t=0)^T R_t ].
+$
+
+- *Core idea:* Increase the probability of actions that lead to high returns  
+
+$
+nabla_theta J(pi_theta) = E_(tau ~ pi_theta)[
+  sum_(t=0)^T nabla log pi_theta (a_t | s_t) G_t
+].
+$
+
+  // $$ \nabla_\theta J(\theta) = \mathbb{E} \left[ \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t \mid s_t) \cdot G_t \right] $$
+- *Algorithm:*
+  - Sample trajectories using the current policy $pi_theta$
+  - Compute the return $G_t$ for each time step
+  - Update parameters via gradient ascent
+
+
+
 == Reinforcement Learning: Reward Shaping
 
 === Reward sets

@@ -48,7 +48,20 @@ header-includes:
 \end{tikzpicture}
 \end{center}
 
-**Problems:**
+## REINFORCE 
+
+- **Goal:** Directly optimize a stochastic policy $\pi_\theta(a \mid s)$ by maximizing the expected return  
+  $$ J(\theta) = \mathbb{E}_{\tau \sim \pi_\theta} \left[ \sum_{t=0}^{T} R_t \right] $$
+
+- **Core idea:** Increase the probability of actions that lead to high returns  
+  $$ \nabla_\theta J(\theta) = \mathbb{E} \left[ \sum_{t=0}^{T} \nabla_\theta \log \pi_\theta(a_t \mid s_t) \cdot G_t \right] $$
+
+- **Algorithm:**
+  - Sample trajectories using the current policy $\pi_\theta$
+  - Compute the return $G_t$ for each time step
+  - Update parameters via gradient ascent
+
+## Problems with rewards
 
 - Sparse rewards $\rightarrow$ poor performance
 - Reward Shaping $\rightarrow$ difficult: 
@@ -206,8 +219,8 @@ A good model needs to master strategy and tactics\
 
 - Reward sets: 
     1. Sparse: only reward on win/loss
-    2. Medium: rewards on 
-    2. Dense: rewards on 
+    2. Medium: adding rewards material advantage, center control, king safety 
+    2. Dense: adding rewards outer center control, castling, pawn promotion, blunder prevention, checks 
 
 **Selfplay:** 1000 batches with 16 games each (REINFORCE) \
 $\rightarrow$ total of 16000 games per color per model
