@@ -5,6 +5,9 @@ This project explores the interaction between **Imitation Learning** and **Rewar
 ## Report
 A deailed report can be found under [Report](report/main.pdf).
 
+## Presentation
+A presentation as a video can be found under [Presentation](presentation.mov).
+
 ## Installation
 
 For installation and setup instructions, see the [Quickstart Guide](quickstart.md).
