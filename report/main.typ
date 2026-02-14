@@ -13,7 +13,7 @@
 
 #show: it => basic-report(
   doc-title: "Exploration of Rewards Shaping and Imitation Learning in Chess",
-  author: "Jakob Lambert-Hartmann",
+  author: "Jakob Lambert-Hartmann, Patric Riedel, Jannis Junge",
   language: "en",
   compact-mode: false,
   show-outline: false,
@@ -406,6 +406,19 @@ as our rewards which should have guided the model towards better policies,
 did not show any increase in performance. 
 
 
+
+== Statistical Significance
+
+To determine whether observed performance differences are statistically significant, each model's reported score is viewed as an empirical estimate of its true expected point proportion $hat(p)$.
+For large $n$, the Central Limit Theorem implies that $hat(p)$ is approximately normally distributed with variance $p(1-p)/n$. 
+We adopt a conservative upper bound for this variance of $0.25/n$, as the expression is maximized at $p = 0.5$. 
+
+In our evaluation, each model played $n = 19,000$ games in total, yielding a worst-case standard error of approximately $0.0036$ for a single model's score estimate.
+When comparing two models with similar sample sizes, the standard error of the difference between their scores is therefore approximately $0.005$. 
+Using a two-sided 95% confidence criterion, performance differences smaller than roughly $0.01$ in expected point proportion may plausibly arise from sampling variation alone, whereas larger differences provide statistically significant evidence that the models differ in playing strength. 
+Consequently, given the large number of games aggregated per model, even differences on the order of one percentage point can be considered meaningful.
+
+
 = Conclusion
 
 In conclusion, out of the training strategies used,
@@ -443,8 +456,8 @@ Computations for this work were done using resources of the Leipzig University C
 
 
 
-#pagebreak()
-= Appendix
+//#pagebreak()
+//= Appendix
 
 // #include "figures/architecture/conv_net.typ"
 // #include "figures/architecture/res_net.typ"
